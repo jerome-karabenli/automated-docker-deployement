@@ -46,9 +46,10 @@ services:
         - postgres
       env_file:
         - ./environement/.api.env
-      restart: on-failure
+      volumes:
+        - ../api/:/usr/src/app
       ports:
-        - 4000:4000
+        - 3000:3000
     
     front_prod:
       build: 

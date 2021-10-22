@@ -1,6 +1,10 @@
 *
 
-!docker
+!docker/dockerFiles
+!docker/nginx
+!docker/automated-docker-deploy.sh
+!docker/config.sh
+!docker/docker-compose.yml
 !.dockerignore
 !.gitignore
 !api/api-content

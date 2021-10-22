@@ -1,7 +1,8 @@
 # ignore all
 *
+# authorize docker to be able to copy the content of theses files and folders
 
-# except for api
+# authorization for api, set here only the requiered files/folders for your api
 !api/app
 !api/index.js
 !api/package.json
@@ -9,13 +10,15 @@
 !api/docs/swagger
 !api/.env
 
-# except for ssl
+# this is for prod env, this folder must be present and containing your privkey.pem and fullchain.pem
 !ssl
 
-# except for front
+# authorization for front, set here only the requiered files/folders for your front
 !front/build
 !docker/nginx
 
-# optional modules except
+# leave this, it's requiered for optional modules usage
 !docker/modules
+
+#change this to your migrations folder path if you want to use sqitch option, path MUST be inside automation-docker-deployement folder 
 !api/migrations
