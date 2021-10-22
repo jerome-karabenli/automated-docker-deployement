@@ -1,0 +1,21 @@
+# ignore all
+*
+
+# except for api
+!api/app
+!api/index.js
+!api/package.json
+!api/yarn.lock
+!api/docs/swagger
+!api/.env
+
+# except for ssl
+!ssl
+
+# except for front
+!front/build
+!docker/nginx
+
+# optional modules except
+!docker/modules
+!api/migrations
