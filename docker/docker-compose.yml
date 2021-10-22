@@ -1,0 +1,88 @@
+version: '3.7'
+services:
+    postgres:
+      networks:
+        - network
+      image: postgres:13.4-alpine
+      env_file:
+        - ./environement/.db.env
+      volumes:
+        - db_data:/var/lib/postgresql/data
+      restart: on-failure
+
+    redis:
+      networks:
+        - network
+      image: redis:alpine
+      volumes:
+        - redis_data:/data
+      restart: on-failure
+
+    api_prod:
+      networks:
+        - network
+      build: 
+        context: ../
+        dockerfile: ./docker/dockerFiles/api.prod.Dockerfile
+      image: api_prod
+      depends_on:
+        - redis
+        - postgres
+      env_file:
+        - ./environement/.api.env
+      restart: on-failure
+      ports:
+        - 3000:3000
+
+    api_dev:
+      networks:
+        - network
+      build: 
+        context: ../
+        dockerfile: ./docker/dockerFiles/api.dev.Dockerfile
+      image: api_dev
+      depends_on:
+        - redis
+        - postgres
+      env_file:
+        - ./environement/.api.env
+      restart: on-failure
+      ports:
+        - 4000:4000
+    
+    front_prod:
+      build: 
+        context: ../
+        dockerfile: ./docker/dockerFiles/front.prod.Dockerfile
+      image: front_prod
+      network_mode: host
+      restart: on-failure
+
+    front_dev:
+      image: nginx:stable-alpine
+      networks:
+        - network
+      ports:
+        - 5000:80
+      volumes: 
+        - ../front/build/:/bin/www
+        - ./nginx/nginx.dev.conf:/etc/nginx/conf.d/default.conf
+      restart: on-failure
+
+    utils:
+      networks:
+        - network
+      image: debian:stable-slim
+      command: " tail -f /dev/null"
+      volumes:
+        - dump_files:/home/
+
+      
+networks:
+  network:
+
+volumes:
+  db_data:
+  redis_data:
+  dump_files:
+    
