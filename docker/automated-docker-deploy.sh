@@ -368,6 +368,7 @@ fi
 
 # SETUP SQITCH TO DEPLOY DATABASE STRUCTURE
 if   [[ $ENABLE_OPTIONS =~ $true_pattern ]] && [[ $ENABLE_SQITCH =~ $true_pattern ]] && [[ $BUILD_BACK =~ $true_pattern ]]; then
+    sleep 1
 
     if [[ ! -d ./modules ]]; then mkdir ./modules; fi
     [ $? -ne 0 ] && echo -e "$red_text\nmodules folder creation error, try to create folder by yourself and try again$reset_color" && exit
@@ -384,9 +385,12 @@ if   [[ $ENABLE_OPTIONS =~ $true_pattern ]] && [[ $ENABLE_SQITCH =~ $true_patter
     [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on copy of sqitch.sh file in utils container$reset_color" && exit
 
     docker cp $PATH_TO_SQITCH_FOLDER/. $PROJECT_NAME\_utils_1:/
-    [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on copy of sqitch migrations folder in utils container$reset_color" && exit
+    if [ $? -ne 0 ]; then
+    docker cp $PATH_TO_SQITCH_FOLDER. $PROJECT_NAME\_utils_1:/
+    [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on copy of sqitch migrations folder in utils container$reset_color" && exit    
+    fi
 
-    docker exec -i $PROJECT_NAME\_utils_1 sh "sqitch.sh"
+    docker exec -i $PROJECT_NAME\_utils_1 bash -c "bash sqitch.sh"
     [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on execution of sqitch.sh script inside utils container$reset_color" && exit
 
     docker-compose -p $PROJECT_NAME rm -sf utils
