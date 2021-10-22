@@ -1,1 +1,7 @@
+*
 
+!docker
+!.dockerignore
+!.gitignore
+!api/api-content
+!front/front-content
