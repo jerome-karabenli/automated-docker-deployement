@@ -19,217 +19,55 @@ path_pattern='^/[a-zA-Z0-9/_.\-]+$'
 #-------------------------------------------------------------------------------------------------------------------#
 #Config file confirmation before run
 
-while true; do
-    read -p "$green_text DO YOU WANT TO RUN PROMPTED VARIABLES SELECTION, IF NOT config.sh FILE$red_text MUST$reset_color$green_text BE EDITED MANUALY ?$reset_color y/n " yn
-    case $yn in
-        [Yy]* ) 
-            
-            while [[ ! $ENV =~ $env_pattern ]] && echo "$red_text ENV MUST BE dev OR prod$reset_color"; do
-                read -p "desired environement=" ENV
-            done 
+source ./config.sh; 
 
-            while [[ ! $PROJECT_NAME =~ $string_underscore_only_lowercase_pattern ]] && echo "$red_text PROJECT NAME MUST BE STRING CONTAINING OPTIONAL _ WITH NO SPACE AND WITHOUT NUMBER$reset_color"; do
-                read -p "project name=" PROJECT_NAME
-            done           
-            
-            while true; do
-                read -p "do you want build back ? y/n " yn
-                case $yn in
-                    [Yy]* )
-  
-                    while [[ ! $DB_CHOICE =~ $db_choice_pattern ]] && echo "$red_text DB CHOICE MUST BE mongo OR postgres$reset_color"; do
-                        read -p "database choice=" DB_CHOICE
-                    done
-                    while [[ -z $DB_USERNAME ]] || [[ ! $DB_USERNAME =~ $string_underscore_dash_pattern ]] && echo "Choose database username. database username accept only string with optional dash and underscore"; do
-                        read -p "db username=" DB_USERNAME
-                    done
-                    while [[ -z $DB_PASSWORD ]] && echo "Choose db password"; do
-                        read -p "db password=" DB_PASSWORD
-                    done
-                    while [[ -z $DB_URI_ENV_NAME ]] || [[ ! $DB_URI_ENV_NAME =~ $string_underscore_dash_pattern ]] && echo "Set same DB URI env name as in your .env file $red_text DB URI ENV NAME MUST BE STRING WITH OPTIONAL _ OR - AND NO SPACE$reset_color"; do
-                        read -p "database uri env name=" DB_URI_ENV_NAME
-                    done
-                    while [[ -z $API_PORT_ENV_NAME ]] || [[ ! $API_PORT_ENV_NAME =~ $string_underscore_dash_pattern ]] && echo "Set same PORT env name as in your .env file $red_text API PORT ENV NAME MUST BE STRING WITH OPTIONAL _ OR - AND NO SPACE$reset_color"; do
-                        read -p "api port env name=" API_PORT_ENV_NAME
-                    done
-                    while [[ -z $API_PORT ]] || [[ ! $API_PORT =~ $number_pattern ]] && echo "Choose API port $red_text API PORT MUST BE NUMBER WITH NO SPACE$reset_color"; do
-                        read -p "api port=" API_PORT
-                    done
+SEEDING_FILE_PATH=$(find ../api -name $SEEDING_FILE_NAME)
+SQITCH_FOLDER_PATH=$(find ../api -name $SQITCH_MIGRATIONS_FOLDER_NAME)
+SQITCH_PLAN_FILE_EXIST=$(find ../api -name sqitch.plan)
+ENV_FILE_EXIST=$(find ../api -name .env -o -name .ENV)
 
-                    BUILD_BACK="true"
-                    
-                    break;;
-                    [Nn]* ) BUILD_BACK="false" break;;
-                    * ) echo "Please answer yes or no.";;
-                esac
-            done
+[[ ! $ENV =~ $env_pattern ]] && echo "$red_text ENV MUST BE dev OR prod$reset_color" && exit
+[[ -z $PROJECT_NAME ]] || [[ ! $PROJECT_NAME =~ $string_underscore_only_lowercase_pattern ]] && echo "$red_text PROJECT NAME MUST BE STRING CONTAINING OPTIONAL _ WITH NO SPACE AND WITHOUT NUMBER$reset_color" && exit
 
-            if [[ $BUILD_BACK =~ $true_pattern ]]; then
-                while true; do
-                    read -p "do you want build redis ? y/n " yn
-                    case $yn in
-                        [Yy]* )
+if [[ $BUILD_FRONT =~ $true_pattern ]]; then
+    [[ -z $FRONT_PORT ]] || [[ ! $FRONT_PORT =~ $number_pattern ]] && echo -e "$red_text\nFRONT PORT MUST BE NUMBER WITH NO SPACE$reset_color" && exit
+fi
 
-                        while [[ -z $REDIS_URI_ENV_NAME ]] || [[ ! $REDIS_URI_ENV_NAME =~ $string_underscore_dash_pattern ]] && echo "Set same REDIS URI env name as in your .env file $red_text REDIS URI ENV NAME MUST BE STRING WITH OPTIONAL _ OR - AND NO SPACE$reset_color"; do
-                            read -p "redis uri env name=" REDIS_URI_ENV_NAME
-                        done
+if [[ $BUILD_BACK =~ $true_pattern ]]; then
 
-                        BUILD_REDIS="true"
-                        
-                        break;;
-                        [Nn]* ) BUILD_REDIS="false" break;;
-                        * ) echo "Please answer yes or no.";;
-                    esac
-                done            
-            fi
+    [ -z $ENV_FILE_EXIST ] && echo -e "$red_text\n ANY ENV FILE WAS FOUND WITH NAME .env or .ENV in api folder" && exit
+    [[ ! $DB_CHOICE =~ $db_choice_pattern ]] && echo "$red_text DB CHOICE MUST BE mongo OR postgres$reset_color" && exit
+    [[ -z $DB_USERNAME ]] || [[ -z $DB_PASSWORD ]] && echo "$red_text DB USERNAME AND DB PASSWORD MUST BE PROVIDED$reset_color" && exit
+    [[ ! $DB_USERNAME =~ $string_underscore_dash_pattern ]] && echo -e "$red_text\nDB USERNAME ERROR \nMUST BE STRING WITH OPTIONAL _ OR - AND NO SPACE$reset_color" && exit    
+    [ -z $(grep "$DB_URI_ENV_NAME" $ENV_FILE_EXIST) ] || [[ -z $DB_URI_ENV_NAME ]] || [[ ! $DB_URI_ENV_NAME =~ $string_underscore_dash_pattern ]] && echo "$red_text DB URI ENV NAME MUST BE STRING WITH OPTIONAL _ OR - AND NO SPACE AND MUST BE PRESENT IN YOUR .env FILE$reset_color" && exit
+    [ -z $(grep "$API_PORT_ENV_NAME" $ENV_FILE_EXIST) ] || [[ -z $API_PORT_ENV_NAME ]] || [[ ! $API_PORT_ENV_NAME =~ $string_underscore_dash_pattern ]] && echo "$red_text API PORT ENV NAME MUST BE STRING WITH OPTIONAL _ OR - AND NO SPACE AND MUST BE PRESENT IN YOUR .env FILE$reset_color" && exit
+    [[ -z $API_PORT ]] || [[ ! $API_PORT =~ $number_pattern ]] && echo "$red_text API PORT ENV NAME MUST BE NUMBER WITH NO SPACE$reset_color" && exit
+fi
 
-            while true; do
-                read -p "do you want build front ? y/n " yn
-                case $yn in
-                    [Yy]* ) 
-                    while [[ -z $FRONT_PORT ]] || [[ ! $FRONT_PORT =~ $number_pattern ]] && echo -e "Choose front port"; do
-                        read -p "value=" FRONT_PORT
-                    done
-                    BUILD_FRONT="true"
-                    break;;
-                    [Nn]* ) BUILD_FRONT="false" break;;
-                    * ) echo "Please answer yes or no.";;
-                esac
-            done
-            
-            if [[ $BUILD_BACK =~ $true_pattern ]]; then
-                while true; do
-                read -p "do you want enable optional modules ? y/n " yn
-                case $yn in
-                    [Yy]* ) 
-                    ENABLE_OPTIONS="true"
-                    while true; do
-                    read -p "do you want enable sqitch structure deploy, only available on postgres database ? y/n " yn
-                    case $yn in
-                        [Yy]* ) 
+if [[ $BUILD_REDIS =~ $true_pattern ]]; then
+    [ -z $(grep "$REDIS_URI_ENV_NAME" $ENV_FILE_EXIST) ] || [[ -z $REDIS_URI_ENV_NAME ]] || [[ ! $REDIS_URI_ENV_NAME =~ $string_underscore_dash_pattern ]] && echo "$red_text REDIS URI ENV NAME MUST BE STRING WITH OPTIONAL _ OR - AND NO SPACE AND MUST BE PRESENT IN YOUR .env FILE$reset_color" && exit
+fi
 
-                        ENABLE_SQITCH="true";
-                        while [[ -z $SQITCH_PROJECT_NAME ]] || [[ ! $SQITCH_PROJECT_NAME =~ $string_underscore_dash_pattern ]] && echo "set exact same project name as in your sqitch.plan file $red_text SQITCH PROJECT NAME MUST BE STRING CONTAINING OPTIONAL _ OR - WITH NO SPACE AND WITHOUT NUMBER$reset_color"; do
-                            read -p "sqitch project name=" SQITCH_PROJECT_NAME
-                        done
+if [[ $ENABLE_SQITCH =~ $true_pattern ]]; then
+    [ -z $SQITCH_PLAN_FILE_EXIST ] || [ -z $(grep "$SQITCH_PROJECT_NAME" $SQITCH_PLAN_FILE_EXIST) ] && echo -e "$red_text\n ANY SQITCH PLAN FILE WAS FOUND in api folder OR sqitch.plan doesn't contain given sqitch project name" && exit
+    [[ -z $SQITCH_PROJECT_NAME ]] || [[ ! $SQITCH_PROJECT_NAME =~ $string_underscore_dash_pattern ]] && echo "$red_text SQITCH PROJECT NAME MUST BE STRING CONTAINING OPTIONAL _ OR - WITH NO SPACE AND WITHOUT NUMBER$reset_color" && exit
+    [[ -z $SQITCH_FOLDER_PATH ]] && echo -e "$red_text\nSQITCH FOLDER PATH VARIABLE ERROR \nMUST BE VALID PATH WITH EXISTING FOLDER AND NOT FILE$reset_color" && exit
+fi
 
-                        while [[ ! -d $PATH_TO_SQITCH_FOLDER ]] && echo -e "$red_text\nMUST BE VALID PATH WITH EXISTING FOLDER AND NOT FILE$reset_color"; do
-                            read -p "path to sqitch migrations folder=" PATH_TO_SQITCH_FOLDER
-                        done
-                        
-                        break;;
-                        [Nn]* ) ENABLE_SQITCH="false"; break;;
-                        * ) echo "Please answer yes or no.";;
-                    esac
-                    done
+if [[ $ENABLE_SEEDING =~ $true_pattern ]]; then
+    [[ -z $SEEDING_FILE_PATH ]] && echo -e "$red_text\nSEEDING FILE NAME ERROR \nMUST BE EXISTING FILE$reset_color" && exit
+fi
 
-                    while true; do
-                    read -p "do you want enable database seeding ? y/n " yn
-                    case $yn in
-                        [Yy]* ) 
-                        ENABLE_SEEDING="true"; 
-                        while [[ ! -d $PATH_TO_SEEDING_FILE ]] && echo -e "$red_text\nSEEDING FILE FOLDER PATH \nMUST BE VALID PATH NOT FILE$reset_color"; do
-                            read -p "path to seeding file folder=" PATH_TO_SEEDING_FILE
-                        done
+if [[ $ENABLE_DUMP_CRON =~ $true_pattern ]]; then
+    [[ ! $CRONJOB_SCHEDULE =~ $cronjob_schedule_pattern ]] && echo -e "$red_text\nCRON JOB SCHEDULE ERROR \nMUST BE VALID CRON SCHEDULE WITH NO SPACE$reset_color" && exit
+    [[ ! $DELETE_OLDER_THAN_DAYS =~ $number_pattern ]] && echo -e "$red_text\nDELETE OLDER THAN DAYS ERROR \nMUST BE NUMBER WITH NO SPACE$reset_color" && exit
+fi
 
-                        while [[ ! -f $PATH_TO_SEEDING_FILE$SEEDING_FILE_NAME ]] || [[ ! -f "$PATH_TO_SEEDING_FILE/$SEEDING_FILE_NAME" ]] && echo -e "$red_text\nSEEDING FILE NAME \nMUST BE EXISTING FILE$reset_color"; do
-                            read -p "seeding file name=" SEEDING_FILE_NAME
-                        done
-                        
-                        break;;
-                        [Nn]* ) ENABLE_SEEDING="false"; break;;
-                        * ) echo "Please answer yes or no.";;
-                    esac
-                    done
-
-                    while true; do
-                    read -p "do you want enable cron for database dump ? y/n " yn
-                    case $yn in
-                        [Yy]* )
-
-                        ENABLE_DUMP_CRON="true"; 
-                        while [[ ! $CRONJOB_SCHEDULE =~ $cronjob_schedule_pattern ]] && echo -e "$red_text\nSet cronjob schedule \nMUST BE VALID CRON SCHEDULE WITH NO SPACE$reset_color"; do
-                            read -p "cronjob schedule=" CRONJOB_SCHEDULE
-                        done
-                        while [[ ! $DELETE_OLDER_THAN_DAYS =~ $number_pattern ]] && echo -e "$red_text\nSet number of days to keep dumped files, this gonna delete older than this value files \nMUST BE NUMBER WITH NO SPACE$reset_color"; do
-                            read -p "number of days to keep=" DELETE_OLDER_THAN_DAYS
-                        done
-                        break;;
-                        [Nn]* ) ENABLE_DUMP_CRON="false"; break;;
-                        * ) echo "Please answer yes or no.";;
-                    esac
-                    done
-
-                    if [[ $ENABLE_DUMP_CRON =~ $true_pattern ]];then
-                        while true; do
-                        read -p "do you want enable sending database dump file over ssh to another server every cron job ? y/n " yn
-                        case $yn in
-                            [Yy]* ) 
-                            ENABLE_BACKUP_SSH="true"; 
-                            
-                            break;;
-                            [Nn]* ) ENABLE_BACKUP_SSH="false"; break;;
-                            * ) echo "Please answer yes or no.";;
-                        esac
-                    done
-                    fi
-                    
-                    break;;
-                    [Nn]* ) ENABLE_OPTIONS="false"; break;;
-                    * ) echo "Please answer yes or no.";;
-                esac
-                done 
-            else ENABLE_OPTIONS="false"
-            fi
-
-        break;;
-        [Nn]* ) source ./config.sh; 
-        
-                [[ ! $ENV =~ $env_pattern ]] && echo "$red_text ENV MUST BE dev OR prod$reset_color" && exit
-                [[ -z $PROJECT_NAME ]] || [[ ! $PROJECT_NAME =~ $string_underscore_only_lowercase_pattern ]] && echo "$red_text PROJECT NAME MUST BE STRING CONTAINING OPTIONAL _ WITH NO SPACE AND WITHOUT NUMBER$reset_color" && exit
-
-                if [[ $BUILD_FRONT =~ $true_pattern ]]; then
-                    [[ -z $FRONT_PORT ]] || [[ ! $FRONT_PORT =~ $number_pattern ]] && echo -e "$red_text\nFRONT PORT MUST BE NUMBER WITH NO SPACE$reset_color" && exit
-                fi
-
-                if [[ $BUILD_BACK =~ $true_pattern ]]; then
-                    [[ ! $DB_CHOICE =~ $db_choice_pattern ]] && echo "$red_text DB CHOICE MUST BE mongo OR postgres$reset_color" && exit
-                    [[ -z $DB_USERNAME ]] || [[ -z $DB_PASSWORD ]] && echo "$red_text DB USERNAME AND DB PASSWORD MUST BE PROVIDED$reset_color" && exit
-                    [[ ! $DB_USERNAME =~ $string_underscore_dash_pattern ]] && echo -e "$red_text\nDB USERNAME ERROR \nMUST BE STRING WITH OPTIONAL _ OR - AND NO SPACE$reset_color" && exit    
-                    [[ -z $DB_URI_ENV_NAME ]] || [[ ! $DB_URI_ENV_NAME =~ $string_underscore_dash_pattern ]] && echo "$red_text DB URI ENV NAME MUST BE STRING WITH OPTIONAL _ OR - AND NO SPACE$reset_color" && exit
-                    [[ -z $API_PORT_ENV_NAME ]] || [[ ! $API_PORT_ENV_NAME =~ $string_underscore_dash_pattern ]] && echo "$red_text API PORT ENV NAME MUST BE STRING WITH OPTIONAL _ OR - AND NO SPACE$reset_color" && exit
-                    [[ -z $API_PORT ]] || [[ ! $API_PORT =~ $number_pattern ]] && echo "$red_text API PORT ENV NAME MUST BE NUMBER WITH NO SPACE$reset_color" && exit
-                fi
-
-                if [[ $BUILD_REDIS =~ $true_pattern ]]; then
-                    [[ -z $REDIS_URI_ENV_NAME ]] || [[ ! $REDIS_URI_ENV_NAME =~ $string_underscore_dash_pattern ]] && echo "$red_text REDIS URI ENV NAME MUST BE STRING WITH OPTIONAL _ OR - AND NO SPACE$reset_color" && exit
-                fi
-
-                if [[ $ENABLE_SQITCH =~ $true_pattern ]]; then
-                    [[ -z $SQITCH_PROJECT_NAME ]] || [[ ! $SQITCH_PROJECT_NAME =~ $string_underscore_dash_pattern ]] && echo "$red_text SQITCH PROJECT NAME MUST BE STRING CONTAINING OPTIONAL _ OR - WITH NO SPACE AND WITHOUT NUMBER$reset_color" && exit
-                    [[ ! -d $PATH_TO_SQITCH_FOLDER ]] && echo -e "$red_text\nSQITCH FOLDER PATH VARIABLE ERROR \nMUST BE VALID PATH WITH EXISTING FOLDER AND NOT FILE$reset_color" && exit
-                fi
-
-                if [[ $ENABLE_SEEDING =~ $true_pattern ]]; then
-                    [[ ! -d $PATH_TO_SEEDING_FILE ]] && echo -e "$red_text\nSEEDING FOLDER PATH ERROR \nMUST BE VALID PATH NOT FILE$reset_color" && exit
-                    [[ ! -f $PATH_TO_SEEDING_FILE$SEEDING_FILE_NAME ]] && [[ ! -f "$PATH_TO_SEEDING_FILE/$SEEDING_FILE_NAME" ]] && echo -e "$red_text\nSEEDING FILE NAME ERROR \nMUST BE EXISTING FILE$reset_color" && exit
-                fi
-
-                if [[ $ENABLE_DUMP_CRON =~ $true_pattern ]]; then
-                    [[ ! $CRONJOB_SCHEDULE =~ $cronjob_schedule_pattern ]] && echo -e "$red_text\nCRON JOB SCHEDULE ERROR \nMUST BE VALID CRON SCHEDULE WITH NO SPACE$reset_color" && exit
-                    [[ ! $DELETE_OLDER_THAN_DAYS =~ $number_pattern ]] && echo -e "$red_text\nDELETE OLDER THAN DAYS ERROR \nMUST BE NUMBER WITH NO SPACE$reset_color" && exit
-                fi
-
-                if [[ $ENABLE_BACKUP_SSH =~ $true_pattern ]]; then
-                    [[ ! $BACKUP_SERVER_SSH_URI =~ $ssh_uri_pattern ]] && echo -e "$red_text\nSSH SERVER URI ERROR \nMUST BE VALID URI WITH NO SPACE$reset_color" && exit
-                    [[ ! $BACKUP_SERVER_SSH_PORT =~ $number_pattern ]] && echo -e "$red_text\nSSH PORT ERROR \nMUST BE NUMBER WITH NO SPACE$reset_color" && exit
-                    [[ ! $PATH_ON_BACKUP_SERVER =~ $path_pattern ]] && echo -e "$red_text\nBACKUP SERVER PATH ERROR \nMUST BE VALID ABSOLUTE PATH AND NOT ROOT /$reset_color" && exit
-                fi      
-        break;;
-        * ) echo "Please answer yes or no.";;
-    esac
-done 
-
+if [[ $ENABLE_BACKUP_SSH =~ $true_pattern ]]; then
+    [[ ! $BACKUP_SERVER_SSH_URI =~ $ssh_uri_pattern ]] && echo -e "$red_text\nSSH SERVER URI ERROR \nMUST BE VALID URI WITH NO SPACE$reset_color" && exit
+    [[ ! $BACKUP_SERVER_SSH_PORT =~ $number_pattern ]] && echo -e "$red_text\nSSH PORT ERROR \nMUST BE NUMBER WITH NO SPACE$reset_color" && exit
+    [[ ! $PATH_ON_BACKUP_SERVER =~ $path_pattern ]] && echo -e "$red_text\nBACKUP SERVER PATH ERROR \nMUST BE VALID ABSOLUTE PATH AND NOT ROOT /$reset_color" && exit
+fi      
 
 # DO NOT TOUCH THIS VARIABLE
 
@@ -241,8 +79,6 @@ if [[ $DB_CHOICE =~ $mongo_pattern ]]; then
 elif [[ $DB_CHOICE =~ $postgres_pattern ]]; then
     DB_URI="$DB_USERNAME:$DB_PASSWORD@postgres:5432/$DB_USERNAME"
 fi
-
-PATH_TO_DOCKER_FOLDER=$(pwd)
 
 
 #-------------------------------------------------------------------------------------------------------------------#
@@ -393,9 +229,10 @@ if   [[ $ENABLE_OPTIONS =~ $true_pattern ]] && [[ $ENABLE_SQITCH =~ $true_patter
     [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on copy of sqitch.sh file in utils container$reset_color" && exit
     fi
 
-    docker cp $PATH_TO_SQITCH_FOLDER/. $PROJECT_NAME\_utils_1:/
+
+    docker cp $SQITCH_FOLDER_PATH/. $PROJECT_NAME\_utils_1:/
     if [ $? -ne 0 ]; then
-    docker cp $PATH_TO_SQITCH_FOLDER/. $PROJECT_NAME-utils-1:/
+    docker cp $SQITCH_MIGRATIONS_FOLDER_NAME/. $PROJECT_NAME-utils-1:/
     [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on copy of sqitch migrations folder in utils container$reset_color" && exit    
     fi
 
@@ -418,23 +255,15 @@ if   [[ $ENABLE_OPTIONS =~ $true_pattern ]] && [[ $ENABLE_SEEDING =~ $true_patte
     sleep 1
 
     if [[ $DB_CHOICE =~ $postgres_pattern ]]; then
-        if [ -f $PATH_TO_SEEDING_FILE$SEEDING_FILE_NAME ]; then
 
-            docker cp $PATH_TO_SEEDING_FILE$SEEDING_FILE_NAME $PROJECT_NAME\_postgres_1:/
-            if [ $? -ne 0 ]; then
-            docker cp $PATH_TO_SEEDING_FILE$SEEDING_FILE_NAME $PROJECT_NAME-postgres-1:/
-            [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on copy of seeding file inside postgres database container$reset_color" && exit
-            fi
         
-        else
 
-            docker cp $PATH_TO_SEEDING_FILE/$SEEDING_FILE_NAME $PROJECT_NAME\_postgres_1:/
-            if [ $? -ne 0 ]; then
-            docker cp $PATH_TO_SEEDING_FILE/$SEEDING_FILE_NAME $PROJECT_NAME-postgres-1:/
-            [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on copy of seeding file inside postgres database container$reset_color" && exit
-            fi
-
+        docker cp $SEEDING_FILE_PATH $PROJECT_NAME\_postgres_1:/
+        if [ $? -ne 0 ]; then
+        docker cp $SEEDING_FILE_PATH $PROJECT_NAME-postgres-1:/
+        [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on copy of seeding file inside postgres database container$reset_color" && exit
         fi
+
 
         docker exec -i $PROJECT_NAME\_postgres_1 sh -c "psql -f /$SEEDING_FILE_NAME postgres://$DB_URI && rm /$SEEDING_FILE_NAME"
         if [ $? -ne 0 ]; then
@@ -500,18 +329,34 @@ else echo "cron dump option not used"
 fi
 
 
-# SETUP SENDING DUMPED BACKUP FILE OVER SSH
-# if   [[ $ENABLE_OPTIONS =~ $true_pattern ]] && [[ $ENABLE_DUMP_CRON =~ $true_pattern ]] && [[ $ENABLE_BACKUP_SSH =~ $true_pattern ]] && [[ $BUILD_BACK =~ $true_pattern ]]; then
+#SETUP SENDING DUMPED BACKUP FILE OVER SSH
+if   [[ $ENABLE_OPTIONS =~ $true_pattern ]] && [[ $ENABLE_DUMP_CRON =~ $true_pattern ]] && [[ $ENABLE_BACKUP_SSH =~ $true_pattern ]] && [[ $BUILD_BACK =~ $true_pattern ]]; then
     
-#     if [[ $DB_CHOICE =~ $postgres_pattern ]]; then
-        
+    docker exec -i $PROJECT_NAME\_utils_1 bash -c "apt-get update && apt-get install rsync openssh-server -y > /dev/null && echo | ssh-keygen -P ''"
+    if [ $? -ne 0 ]; then
+    docker exec -i $PROJECT_NAME-utils-1 bash -c "apt-get update && apt-get install rsync openssh-server -y > /dev/null && echo | ssh-keygen -P ''"
+    [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on execution of commands for ssh setup inside utils container$reset_color" && exit
+    fi
 
-#         echo -e "$green_text\nPOSTGRES DATABASE SEEDING SUCCESSFULLY DONE$reset_color"  
-#     else
-   
-#     fi 
-# else echo "send dump file over ssh option not used"
-# fi
+    echo "${green_text}COPY THIS KEY INTO YOUR authorized_keys FILE${reset_color}"
+    echo "${green_text}----------------------------------------------------------------------------${reset_color}"
+    docker exec -it $PROJECT_NAME\_utils_1 bash -c "cat ~/.ssh/id_rsa.pub"
+    if [ $? -ne 0 ]; then
+    docker exec -it $PROJECT_NAME-utils-1 bash -c "cat ~/.ssh/id_rsa.pub"
+    [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on execution of commands for showing ssh id_rsa.pub inside utils container$reset_color" && exit
+    fi
+    echo "${green_text}----------------------------------------------------------------------------${reset_color}"
+
+    while true; do
+        read -p "Type yes when key is copied ?  " yn
+        case $yn in
+            [Yy]* ) break;;
+        * ) echo "Please answer yes or no.";;
+        esac
+    done
+
+else echo "send dump file over ssh option not used"
+fi
 
 
 if [[ ! $ENABLE_OPTIONS =~ $true_pattern ]] || [[ ! $ENABLE_DUMP_CRON =~ $true_pattern ]]; then
