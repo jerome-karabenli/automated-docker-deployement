@@ -1,5 +1,15 @@
 version: '3.7'
 services:
+    mongo_dev:
+      networks:
+        - network
+      image: mongo:4.0.26
+      env_file:
+        - ./environement/.db.env
+      volumes:
+        - db_data:/data/db
+      restart: on-failure
+
     postgres:
       networks:
         - network
@@ -73,10 +83,19 @@ services:
     utils:
       networks:
         - network
-      image: debian:stable-slim
+      build: 
+        context: ../
+        dockerfile: ./docker/dockerFiles/utils.Dockerfile
+      image: utils
       command: " tail -f /dev/null"
       volumes:
         - dump_files:/home/
+
+    sqitch:
+      networks:
+        - network
+      image: debian:stable-slim
+      command: " tail -f /dev/null"
 
       
 networks:

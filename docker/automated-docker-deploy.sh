@@ -111,7 +111,7 @@ if [[ ! -d ./environement ]]; then mkdir ./environement; fi
 
 if [[ $BUILD_BACK =~ $true_pattern ]] && [[ $DB_CHOICE =~ $postgres_pattern ]]; then
 
-    sed -i "52c\        - $API_PORT:$API_PORT" docker-compose.yml
+    sed -i "62c\        - $API_PORT:$API_PORT" docker-compose.yml
     [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on api_dev setting port in compose file$reset_color" && exit    
 
 
@@ -132,7 +132,7 @@ if [[ $BUILD_BACK =~ $true_pattern ]] && [[ $DB_CHOICE =~ $postgres_pattern ]]; 
 elif [[ $BUILD_BACK =~ $true_pattern ]] && [[ $DB_CHOICE =~ $mongo_pattern ]]; then
     #todo same logic for mongo database
 
-    sed -i "51c\        - $API_PORT:$API_PORT" docker-compose.yml
+    sed -i "62c\        - $API_PORT:$API_PORT" docker-compose.yml
     [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on api_dev setting port in compose file$reset_color" && exit    
 
     echo -e "MONGO_INITDB_ROOT_USERNAME=$DB_USERNAME\nMONGO_INITDB_ROOT_PASSWORD=$DB_PASSWORD" > ./environement/.db.env
@@ -185,7 +185,7 @@ fi
 # FRONT DEPLOYEMENT
 if [[ $BUILD_FRONT =~ $true_pattern ]] && [[ $ENV =~ $dev_pattern ]]; then
 
-    sed -i "67c\        - $FRONT_PORT:80" docker-compose.yml
+    sed -i "77c\        - $FRONT_PORT:80" docker-compose.yml
     [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on front_dev setting port in compose file$reset_color" && exit    
 
     docker-compose -p $PROJECT_NAME up -d front_dev
@@ -220,29 +220,29 @@ if   [[ $ENABLE_OPTIONS =~ $true_pattern ]] && [[ $ENABLE_SQITCH =~ $true_patter
     [ $? -ne 0 ] && echo -e "$red_text\nsqitch module file creation error, try to create file by yourself and try again$reset_color" && exit
     [ ! -f ./modules/sqitch.sh ] && [ ! -s ./modules/sqitch.sh ] && echo -e "$red_text\nsqitch module file creation error, try to create file by yourself and try again$reset_color" && exit
     
-    docker-compose -p $PROJECT_NAME up -d utils
+    docker-compose -p $PROJECT_NAME up -d sqitch
     [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on build and run utils service in compose file$reset_color" && exit
 
-    docker cp ./modules/sqitch.sh $PROJECT_NAME\_utils_1:/
+    docker cp ./modules/sqitch.sh $PROJECT_NAME\_sqitch_1:/
     if [ $? -ne 0 ]; then
-    docker cp ./modules/sqitch.sh $PROJECT_NAME-utils-1:/
+    docker cp ./modules/sqitch.sh $PROJECT_NAME-sqitch-1:/
     [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on copy of sqitch.sh file in utils container$reset_color" && exit
     fi
 
 
-    docker cp $SQITCH_FOLDER_PATH/. $PROJECT_NAME\_utils_1:/
+    docker cp $SQITCH_FOLDER_PATH/. $PROJECT_NAME\_sqitch_1:/
     if [ $? -ne 0 ]; then
-    docker cp $SQITCH_MIGRATIONS_FOLDER_NAME/. $PROJECT_NAME-utils-1:/
+    docker cp $SQITCH_MIGRATIONS_FOLDER_NAME/. $PROJECT_NAME-sqitch-1:/
     [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on copy of sqitch migrations folder in utils container$reset_color" && exit    
     fi
 
-    docker exec -i $PROJECT_NAME\_utils_1 bash -c "bash sqitch.sh"
+    docker exec -i $PROJECT_NAME\_sqitch_1 bash -c "bash sqitch.sh"
     if [ $? -ne 0 ]; then
-    docker exec -i $PROJECT_NAME-utils-1 bash -c "bash sqitch.sh"
+    docker exec -i $PROJECT_NAME-sqitch-1 bash -c "bash sqitch.sh"
     [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on execution of sqitch.sh script inside utils container$reset_color" && exit
     fi
 
-    docker-compose -p $PROJECT_NAME rm -sf utils
+    docker-compose -p $PROJECT_NAME rm -sf sqitch
     [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on stopping and removing of utils container$reset_color" && exit
 
     echo -e "$green_text\nDATABASE STRUCTURE DEPLOYEMENT WITH SQITCH SUCCESSFULLY DONE$reset_color"
@@ -282,81 +282,85 @@ fi
 
 
 # SETUP CRON SCHEDULING DB DUMP OPTION
-if   [[ $ENABLE_OPTIONS =~ $true_pattern ]] && [[ $ENABLE_DUMP_CRON =~ $true_pattern ]] && [[ $BUILD_BACK =~ $true_pattern ]]; then
+if [[ $ENABLE_OPTIONS =~ $true_pattern ]] && [[ $ENABLE_DUMP_CRON =~ $true_pattern ]] && [[ $BUILD_BACK =~ $true_pattern ]]; then
 
     if [[ ! -d ./modules ]]; then mkdir ./modules; fi
     [ $? -ne 0 ] && echo -e "$red_text\nmodules folder creation error, try to create folder by yourself and try again$reset_color" && exit
     [ ! -d ./modules ] && echo -e "$red_text\nmodules folder creation error, try to create folder by yourself and try again$reset_color" && exit
 
-    docker-compose -p $PROJECT_NAME up -d utils
-    [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on build and run utils service in compose file$reset_color" && exit
 
     if [[ $DB_CHOICE =~ $postgres_pattern ]]; then
 
         echo -e "DATE=\$(date +%F-%H_%M)\npg_dump postgres://$DB_URI > /home/postgres\$DATE.sql\nfind /home/ -type f -ctime +$DELETE_OLDER_THAN_DAYS -execdir rm -- '{}' \;" > ./modules/cron.sh
         [ $? -ne 0 ] && echo -e "$red_text\ncron module file creation error, try to create file by yourself and try again$reset_color" && exit
         [ ! -f ./modules/cron.sh ] && [ ! -s ./modules/cron.sh ] && echo -e "$red_text\ncron module file creation error, try to create file by yourself and try again$reset_color" && exit
-        
-        docker cp ./modules/cron.sh $PROJECT_NAME\_utils_1:/
-        if [ $? -ne 0 ]; then
-        docker cp ./modules/cron.sh $PROJECT_NAME-utils-1:/
-        [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on copy of cron.sh file in utils container$reset_color" && exit
-        fi
 
-        docker exec -it $PROJECT_NAME\_utils_1 bash -c "apt-get update > /dev/null && apt-get install cron postgresql-client -y > /dev/null && touch dump_cron && echo \"$CRONJOB_SCHEDULE /bin/sh /cron.sh >> /cron.log 2>&1\" > dump_cron && crontab dump_cron && rm dump_cron && service cron restart"
-        if [ $? -ne 0 ]; then
-        docker exec -it $PROJECT_NAME-utils-1 bash -c "apt-get update > /dev/null && apt-get install cron postgresql-client -y > /dev/null && touch dump_cron && echo \"$CRONJOB_SCHEDULE /bin/sh /cron.sh >> /cron.log 2>&1\" > dump_cron && crontab dump_cron && rm dump_cron && service cron restart"
-        [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on execution of commands for cronjob inside utils container$reset_color" && exit
-        fi
-       
-        echo -e "$green_text\nCRON SCHEDULE FOR DB DUMP SUCCESSFULLY DONE$reset_color"  
+        sed -i "4c RUN apt-get install postgresql-client cron -y > /dev/null" ./dockerFiles/utils.Dockerfile
+        [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on setting run command in utils dockerfile file$reset_color" && exit    
+
+        sed -i "5c RUN echo \"$CRONJOB_SCHEDULE /bin/sh /root/cron.sh >> /root/cron.log 2>&1\" > dump_cron && crontab dump_cron && rm dump_cron && service cron restart" ./dockerFiles/utils.Dockerfile
+        [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on setting run command in utils dockerfile file$reset_color" && exit    
+
+
     else
         # todo same logic for mongo database
-        echo -e "DATE=$(date +%F-%H_%M)\n pg_dump postgres://$DB_URI > /home/postgres\$DATE.sql\nfind /home/ -type f -ctime +$DELETE_OLDER_THAN_DAYS -execdir rm -- '{}' \;" > ./modules/cron.sh
-        [ $? -ne 0 ] && echo -e "$red_text\ncron module file creation error, try to create file by yourself and try again$reset_color" && exit
-        [ ! -f ./modules/cron.sh ] && [ ! -s ./modules/cron.sh ] && echo -e "$red_text\ncron module file creation error, try to create file by yourself and try again$reset_color" && exit
-        
-        docker cp ./modules/cron.sh $PROJECT_NAME\_utils_1:/
-        [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on copy of cron.sh file in utils container$reset_color" && exit
-
-        docker exec -i $PROJECT_NAME\_utils_1 sh -c "apt-get update > /dev/null && apt-get install cron -y > /dev/null && touch dump_cron && echo \"$CRONJOB /bin/sh /dump.sh >> /dump.log 2>&1\" >> dump_cron && crontab dump_cron && rm dump_cron && service cron restart"
-        [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on execution of commands for cronjob inside utils container$reset_color" && exit
-       
-        echo -e "$green_text\nCRON SCHEDULE FOR DB DUMP SUCCESSFULLY DONE$reset_color"
-   
+        sed -i "5c RUN echo \"$CRONJOB_SCHEDULE /bin/sh /root/cron.sh >> /root/cron.log 2>&1\" > dump_cron && crontab dump_cron && rm dump_cron && service cron restart" ./dockerFiles/utils.Dockerfile
+        [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on setting run command in utils dockerfile file$reset_color" && exit    
     fi 
+
+    #SETUP SENDING DUMPED BACKUP FILE OVER SSH IF TRUE
+    if [[ $ENABLE_BACKUP_SSH =~ $true_pattern  ]]; then
+
+        echo " " >> ./dockerFiles/utils.Dockerfile
+        sed -i "7c RUN apt-get install openssh-server rsync -y > /dev/null && echo | ssh-keygen -P ''" ./dockerFiles/utils.Dockerfile
+        [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on setting run command in utils dockerfile file$reset_color" && exit    
+
+    else
+        sed -i "7d" ./dockerFiles/utils.Dockerfile
+        echo "ssh server backup option not used"
+
+    fi
+
+    sed -i "6c COPY ./docker/modules/cron.sh ." ./dockerFiles/utils.Dockerfile
+    [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on setting run command in utils dockerfile file$reset_color" && exit    
+
+
+    docker-compose -p $PROJECT_NAME up -d utils
+    [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on starting utils service with build of utils image$reset_color" && exit    
+
+    echo -e "$green_text\nCRON SCHEDULE FOR DB DUMP SUCCESSFULLY DONE$reset_color" 
+
+    if [[ $ENABLE_BACKUP_SSH =~ $true_pattern ]]; then
+        echo "${green_text}COPY THIS KEY INTO YOUR authorized_keys FILE${reset_color}"
+        echo "${green_text}----------------------------------------------------------------------------${reset_color}"
+
+        docker exec -it $PROJECT_NAME\_utils_1 bash -c "cat ~/.ssh/id_rsa.pub"
+        if [ $? -ne 0 ]; then
+        docker exec -it $PROJECT_NAME-utils-1 bash -c "cat ~/.ssh/id_rsa.pub"
+        [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on execution of commands for showing ssh id_rsa.pub inside utils container$reset_color" && exit
+        fi
+        echo "${green_text}----------------------------------------------------------------------------${reset_color}"
+
+        while true; do
+            read -p "Type yes when key is copied ?  " yn
+            case $yn in
+                [Yy]* ) break;;
+            * ) echo "Please answer yes";;
+            esac
+        done
+    fi
+
+    # docker rmi debian:stable-slim
+    # [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on deleting unused debian image$reset_color" && exit    
+
+
+ 
+
+
 else echo "cron dump option not used"
 fi
 
 
-#SETUP SENDING DUMPED BACKUP FILE OVER SSH
-if   [[ $ENABLE_OPTIONS =~ $true_pattern ]] && [[ $ENABLE_DUMP_CRON =~ $true_pattern ]] && [[ $ENABLE_BACKUP_SSH =~ $true_pattern ]] && [[ $BUILD_BACK =~ $true_pattern ]]; then
-    
-    docker exec -i $PROJECT_NAME\_utils_1 bash -c "apt-get update && apt-get install rsync openssh-server -y > /dev/null && echo | ssh-keygen -P ''"
-    if [ $? -ne 0 ]; then
-    docker exec -i $PROJECT_NAME-utils-1 bash -c "apt-get update && apt-get install rsync openssh-server -y > /dev/null && echo | ssh-keygen -P ''"
-    [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on execution of commands for ssh setup inside utils container$reset_color" && exit
-    fi
-
-    echo "${green_text}COPY THIS KEY INTO YOUR authorized_keys FILE${reset_color}"
-    echo "${green_text}----------------------------------------------------------------------------${reset_color}"
-    docker exec -it $PROJECT_NAME\_utils_1 bash -c "cat ~/.ssh/id_rsa.pub"
-    if [ $? -ne 0 ]; then
-    docker exec -it $PROJECT_NAME-utils-1 bash -c "cat ~/.ssh/id_rsa.pub"
-    [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on execution of commands for showing ssh id_rsa.pub inside utils container$reset_color" && exit
-    fi
-    echo "${green_text}----------------------------------------------------------------------------${reset_color}"
-
-    while true; do
-        read -p "Type yes when key is copied ?  " yn
-        case $yn in
-            [Yy]* ) break;;
-        * ) echo "Please answer yes or no.";;
-        esac
-    done
-
-else echo "send dump file over ssh option not used"
-fi
 
 
 if [[ ! $ENABLE_OPTIONS =~ $true_pattern ]] || [[ ! $ENABLE_DUMP_CRON =~ $true_pattern ]]; then
