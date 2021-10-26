@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <script defer>
+        (async () => {
+            const result1 = await fetch("http://127.0.0.1:3000/infos")
+            const {id, ip} = await result1.json()
+            const result2 = await fetch("http://127.0.0.1:3000/seeding")
+            const datas1 = await result2.json()
+            const result3 = await fetch("http://127.0.0.1:3000/sqitch")
+            const datas2 = await result3.json()
+
+            document.querySelector("#api_id").innerHTML = `running api container id: ${id}` 
+            document.querySelector("#api_ip").innerHTML = `running api container ip: ${ip}`
+            for(const data of datas1){
+                document.querySelector("#seeding").append(data)
+            }
+            for(const data of datas2){
+                document.querySelector("#sqitch").append(data)
+            }
+             
+
+        })()
+
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automated docker deployement</title>
+</head>
+<body>
+    This is working and connected frontend
+    <H1>API</H1>
+    <h3 id="api_id"></h3>
+    <h3 id="api_ip"></h3>
+    <h3>This is content with seeding option :</h3>
+    <p id="seeding"></p>
+    <h3>This is content with sqitch option :</h3>
+    <p id="sqitch"></p>
+
+    <h1>FRONT</h1>
+    <h3>Front container id 586efb9475ba</h3>
+    <h3>Front container ip 192.168.192.5</h3>
+</body>
+</html>

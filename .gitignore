@@ -1,12 +1,2 @@
-
-*
-
-!docker/dockerFiles
-!docker/nginx
-!ssl/*
-!docker/automated-docker-deploy.sh
-!docker/config.sh
-!docker/docker-compose.yml
-!.dockerignore
-!api/api-content
-!front/front-content
+yarn.lock
+node_modules

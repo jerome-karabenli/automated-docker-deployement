@@ -1,10 +1,11 @@
+# OUTPUT COLORING VARIABLES
 green_text=`tput setaf 2`
 red_text=`tput setaf 1`
 reset_color=`tput sgr0`
 
 # -----------------------------------------------------------------------------------------------------#
-# VARIABLE PATERN
-ssh_uri_pattern='^[a-zA-Z0-9_-]+@[a-zA-Z0-9_\-\.]+\.[a-zA-Z]+$'
+# VARIABLES PATERN
+ssh_uri_pattern='^[a-zA-Z0-9_-]+@[a-zA-Z0-9_\-\.]+\.[a-zA-Z0-9]+$'
 env_pattern='^[dD][eE][vV]|^[pP][rR][oO][dD]'
 true_pattern='^[tT].*|^[yY].*'
 number_pattern='^[0-9]+$'
@@ -22,55 +23,73 @@ path_pattern='^/[a-zA-Z0-9/_.\-]+$'
 source ./config.sh; 
 
 SEEDING_FILE_PATH=$(find ../api -name $SEEDING_FILE_NAME)
-SQITCH_FOLDER_PATH=$(find ../api -name $SQITCH_MIGRATIONS_FOLDER_NAME)
-SQITCH_PLAN_FILE_EXIST=$(find ../api -name sqitch.plan)
+SQITCH_CONF_FILE_EXIST=$(find ../api -name sqitch.conf)
+SQITCH_CONF_FILE_PARENT_DIR=$(dirname -- "$SQITCH_CONF_FILE_EXIST")
 ENV_FILE_EXIST=$(find ../api -name .env -o -name .ENV)
 
+# GLOBAL VARIABLES CHECK
 [[ ! $ENV =~ $env_pattern ]] && echo "$red_text ENV MUST BE dev OR prod$reset_color" && exit
 [[ -z $PROJECT_NAME ]] || [[ ! $PROJECT_NAME =~ $string_underscore_only_lowercase_pattern ]] && echo "$red_text PROJECT NAME MUST BE STRING CONTAINING OPTIONAL _ WITH NO SPACE AND WITHOUT NUMBER$reset_color" && exit
 
+# FRONT VARIABLES CHECK
 if [[ $BUILD_FRONT =~ $true_pattern ]]; then
     [[ -z $FRONT_PORT ]] || [[ ! $FRONT_PORT =~ $number_pattern ]] && echo -e "$red_text\nFRONT PORT MUST BE NUMBER WITH NO SPACE$reset_color" && exit
 fi
 
+# BACK VARIABLES CHECK
 if [[ $BUILD_BACK =~ $true_pattern ]]; then
 
     [ -z $ENV_FILE_EXIST ] && echo -e "$red_text\n ANY ENV FILE WAS FOUND WITH NAME .env or .ENV in api folder" && exit
     [[ ! $DB_CHOICE =~ $db_choice_pattern ]] && echo "$red_text DB CHOICE MUST BE mongo OR postgres$reset_color" && exit
     [[ -z $DB_USERNAME ]] || [[ -z $DB_PASSWORD ]] && echo "$red_text DB USERNAME AND DB PASSWORD MUST BE PROVIDED$reset_color" && exit
     [[ ! $DB_USERNAME =~ $string_underscore_dash_pattern ]] && echo -e "$red_text\nDB USERNAME ERROR \nMUST BE STRING WITH OPTIONAL _ OR - AND NO SPACE$reset_color" && exit    
+    [ -z $(grep "$NODE_ENV_NAME" $ENV_FILE_EXIST) ] || [[ -z $NODE_ENV_NAME ]] || [[ ! $NODE_ENV_NAME =~ $string_underscore_dash_pattern ]] && echo "$red_text NODE ENV NAME MUST BE STRING WITH OPTIONAL _ OR - AND NO SPACE AND MUST BE PRESENT IN YOUR .env FILE$reset_color" && exit
     [ -z $(grep "$DB_URI_ENV_NAME" $ENV_FILE_EXIST) ] || [[ -z $DB_URI_ENV_NAME ]] || [[ ! $DB_URI_ENV_NAME =~ $string_underscore_dash_pattern ]] && echo "$red_text DB URI ENV NAME MUST BE STRING WITH OPTIONAL _ OR - AND NO SPACE AND MUST BE PRESENT IN YOUR .env FILE$reset_color" && exit
     [ -z $(grep "$API_PORT_ENV_NAME" $ENV_FILE_EXIST) ] || [[ -z $API_PORT_ENV_NAME ]] || [[ ! $API_PORT_ENV_NAME =~ $string_underscore_dash_pattern ]] && echo "$red_text API PORT ENV NAME MUST BE STRING WITH OPTIONAL _ OR - AND NO SPACE AND MUST BE PRESENT IN YOUR .env FILE$reset_color" && exit
     [[ -z $API_PORT ]] || [[ ! $API_PORT =~ $number_pattern ]] && echo "$red_text API PORT ENV NAME MUST BE NUMBER WITH NO SPACE$reset_color" && exit
 fi
 
+# REDIS VARIABLE CHECK
 if [[ $BUILD_REDIS =~ $true_pattern ]]; then
     [ -z $(grep "$REDIS_URI_ENV_NAME" $ENV_FILE_EXIST) ] || [[ -z $REDIS_URI_ENV_NAME ]] || [[ ! $REDIS_URI_ENV_NAME =~ $string_underscore_dash_pattern ]] && echo "$red_text REDIS URI ENV NAME MUST BE STRING WITH OPTIONAL _ OR - AND NO SPACE AND MUST BE PRESENT IN YOUR .env FILE$reset_color" && exit
 fi
 
+# SQITCH OPTION VARIABLES CHECK
 if [[ $ENABLE_SQITCH =~ $true_pattern ]]; then
-    [ -z $SQITCH_PLAN_FILE_EXIST ] || [ -z $(grep "$SQITCH_PROJECT_NAME" $SQITCH_PLAN_FILE_EXIST) ] && echo -e "$red_text\n ANY SQITCH PLAN FILE WAS FOUND in api folder OR sqitch.plan doesn't contain given sqitch project name" && exit
-    [[ -z $SQITCH_PROJECT_NAME ]] || [[ ! $SQITCH_PROJECT_NAME =~ $string_underscore_dash_pattern ]] && echo "$red_text SQITCH PROJECT NAME MUST BE STRING CONTAINING OPTIONAL _ OR - WITH NO SPACE AND WITHOUT NUMBER$reset_color" && exit
-    [[ -z $SQITCH_FOLDER_PATH ]] && echo -e "$red_text\nSQITCH FOLDER PATH VARIABLE ERROR \nMUST BE VALID PATH WITH EXISTING FOLDER AND NOT FILE$reset_color" && exit
+    [ -z $SQITCH_CONF_FILE_EXIST ] && echo -e "$red_text\n ANY sqitch.conf FILE WAS FOUND in api folder" && exit
 fi
 
+# SEEDING OPTION VARIABLES CHECK
 if [[ $ENABLE_SEEDING =~ $true_pattern ]]; then
-    [[ -z $SEEDING_FILE_PATH ]] && echo -e "$red_text\nSEEDING FILE NAME ERROR \nMUST BE EXISTING FILE$reset_color" && exit
+    [[ -z $SEEDING_FILE_PATH ]] && echo -e "$red_text\nSEEDING FILE NAME ERROR \nMUST BE EXISTING FILE in api folder$reset_color" && exit
 fi
 
+# DUMP CRON OPTION VARIABLES CHECK
 if [[ $ENABLE_DUMP_CRON =~ $true_pattern ]]; then
     [[ ! $CRONJOB_SCHEDULE =~ $cronjob_schedule_pattern ]] && echo -e "$red_text\nCRON JOB SCHEDULE ERROR \nMUST BE VALID CRON SCHEDULE WITH NO SPACE$reset_color" && exit
     [[ ! $DELETE_OLDER_THAN_DAYS =~ $number_pattern ]] && echo -e "$red_text\nDELETE OLDER THAN DAYS ERROR \nMUST BE NUMBER WITH NO SPACE$reset_color" && exit
 fi
 
+# SSH BACKUP OPTION VARIABLES CHECK
 if [[ $ENABLE_BACKUP_SSH =~ $true_pattern ]]; then
     [[ ! $BACKUP_SERVER_SSH_URI =~ $ssh_uri_pattern ]] && echo -e "$red_text\nSSH SERVER URI ERROR \nMUST BE VALID URI WITH NO SPACE$reset_color" && exit
     [[ ! $BACKUP_SERVER_SSH_PORT =~ $number_pattern ]] && echo -e "$red_text\nSSH PORT ERROR \nMUST BE NUMBER WITH NO SPACE$reset_color" && exit
     [[ ! $PATH_ON_BACKUP_SERVER =~ $path_pattern ]] && echo -e "$red_text\nBACKUP SERVER PATH ERROR \nMUST BE VALID ABSOLUTE PATH AND NOT ROOT /$reset_color" && exit
-fi      
+fi 
 
+
+while true; do
+    read -p "demo mode ? y/n " yn
+    case $yn in
+        [Yy]* ) DEMO_MODE="true"; break;;
+        [Nn]* ) DEMO_MODE="false"; break;;
+        * ) echo "Please answer yes or no.";;
+    esac
+done
+
+
+#---------------------------------------------------------------------------------------------------------------------------#
 # DO NOT TOUCH THIS VARIABLE
-
 mongo_pattern='^[mM]ongo'
 postgres_pattern='^[pP]ostgres'
 
@@ -81,67 +100,44 @@ elif [[ $DB_CHOICE =~ $postgres_pattern ]]; then
 fi
 
 
-#-------------------------------------------------------------------------------------------------------------------#
-#SETUP shorcuts for managing containers without relauching this looooooong script
-PATH_TO_COMPOSE_FILE=$(realpath ./docker-compose.yml)
-[[ ! -f $PATH_TO_COMPOSE_FILE ]] || [[ ! -s $PATH_TO_COMPOSE_FILE ]] && echo -e "$red_text\nDOCKER COMPOSE FILE NOT HERE$reset_color" && exit
-
-# if directory doesn't exist it be created here
-if [[ ! -d ./shortcuts ]]; then mkdir ./shortcuts; fi
-[ $? -ne 0 ] && echo -e "$red_text\nshortcuts folder creation error, try to create folder by yourself and try again$reset_color" && exit
-
-# be careful this command gonna kill all your containers and remove all atached volumes and related images
-echo "docker-compose -f $PATH_TO_COMPOSE_FILE -p $PROJECT_NAME down -v --rmi all" > ./shortcuts/remove-all.sh && chmod +x ./shortcuts/remove-all.sh
-[ $? -ne 0 ] && echo -e "$red_text\nstop-all.sh file in shortcuts folder error$reset_color" && exit
-[ ! -f ./shortcuts/remove-all.sh ] && [ ! -s ./shortcuts/remove-all.sh ] && echo -e "$red_text\nstop-all.sh file in shortcuts folder error$reset_color" && exit
-
-# this command stop and rebuild api on dev env
-echo "docker-compose -f $PATH_TO_COMPOSE_FILE -p $PROJECT_NAME rm -sf api_dev && docker rmi api_dev && docker-compose -f $PATH_TO_COMPOSE_FILE -p $PROJECT_NAME up -d api_dev" > ./shortcuts/stop-rebuild-api.sh && chmod +x ./shortcuts/stop-rebuild-api.sh
-[ $? -ne 0 ] && echo -e "$red_text\nstop-all.sh file in shortcuts folder error$reset_color" && exit
-[ ! -f ./shortcuts/stop-rebuild-api.sh ] && [ ! -s ./shortcuts/stop-rebuild-api.sh ] && echo -e "$red_text\nstop-all.sh file in shortcuts folder error$reset_color" && exit
-
-
-# TODO api-stop-rebuild shorcut + front-stop-rebuild shortcut
-
 #-------------------------------------------------------------------------------------------------------------
 # .env FILES POPULATION FOR docker-compose.yml
 if [[ ! -d ./environement ]]; then mkdir ./environement; fi
 [ $? -ne 0 ] && echo -e "$red_text\nenvironement folder creation error, try to create folder by yourself and try again$reset_color" && exit
 
 
-if [[ $BUILD_BACK =~ $true_pattern ]] && [[ $DB_CHOICE =~ $postgres_pattern ]]; then
+if [[ $BUILD_BACK =~ $true_pattern ]]; then
 
-    sed -i "62c\        - $API_PORT:$API_PORT" docker-compose.yml
-    [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on api_dev setting port in compose file$reset_color" && exit    
-
-
-    echo -e "POSTGRES_USER=$DB_USERNAME\nPOSTGRES_PASSWORD=$DB_PASSWORD" > ./environement/.db.env
-    [ $? -ne 0 ] && echo -e "$red_text\ndb env file creation error, try to create file by yourself and try again$reset_color" && exit
-    [ ! -f ./environement/.db.env ] && [ ! -s ./environement/.db.env ] && echo "$red_text ERROR on population of environnement/.db.env file$reset_color" && exit
-    
     if [[ $BUILD_REDIS =~ $true_pattern ]]; then
-        echo -e "$DB_URI_ENV_NAME=postgres://$DB_URI\n$REDIS_URI_ENV_NAME=redis://redis:6379\n$API_PORT_ENV_NAME=$API_PORT" > ./environement/.api.env
+        echo -e "$REDIS_URI_ENV_NAME=redis://redis:6379\n$API_PORT_ENV_NAME=$API_PORT" > ./environement/.api.env
         [ $? -ne 0 ] && echo -e "$red_text\napi env file creation error, try to create file by yourself and try again$reset_color" && exit    
         [ ! -f ./environement/.api.env ] || [ ! -s ./environement/.api.env ] && echo "$red_text ERROR on population of environnement/.api.env file$reset_color" && exit
     else
-        echo -e "$DB_URI_ENV_NAME=postgres://$DB_URI\n$API_PORT_ENV_NAME=$API_PORT" > ./environement/.api.env
+        echo -e "$API_PORT_ENV_NAME=$API_PORT" > ./environement/.api.env
         [ $? -ne 0 ] && echo -e "$red_text\napi env file creation error, try to create file by yourself and try again$reset_color" && exit    
         [ ! -f ./environement/.api.env ] || [ ! -s ./environement/.api.env ] && echo "$red_text ERROR on population of environnement/.api.env file$reset_color" && exit
     fi
 
-elif [[ $BUILD_BACK =~ $true_pattern ]] && [[ $DB_CHOICE =~ $mongo_pattern ]]; then
-    #todo same logic for mongo database
+    if [[ $DB_CHOICE =~ $postgres_pattern ]]; then
+        echo -e "$DB_URI_ENV_NAME=postgres://$DB_URI" >> ./environement/.api.env
+        [ $? -ne 0 ] && echo -e "$red_text\napi env file creation error, try to create file by yourself and try again$reset_color" && exit    
+        [ ! -f ./environement/.api.env ] || [ ! -s ./environement/.api.env ] && echo "$red_text ERROR on population of environnement/.api.env file$reset_color" && exit
 
-    sed -i "62c\        - $API_PORT:$API_PORT" docker-compose.yml
-    [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on api_dev setting port in compose file$reset_color" && exit    
+        echo -e "POSTGRES_USER=$DB_USERNAME\nPOSTGRES_PASSWORD=$DB_PASSWORD" > ./environement/.db.env
+        [ $? -ne 0 ] && echo -e "$red_text\ndb env file creation error, try to create file by yourself and try again$reset_color" && exit
+        [ ! -f ./environement/.db.env ] && [ ! -s ./environement/.db.env ] && echo "$red_text ERROR on population of environnement/.db.env file$reset_color" && exit
+    
+    elif  [[ $DB_CHOICE =~ $mongo_pattern ]]; then
 
-    echo -e "MONGO_INITDB_ROOT_USERNAME=$DB_USERNAME\nMONGO_INITDB_ROOT_PASSWORD=$DB_PASSWORD" > ./environement/.db.env
-    [ $? -ne 0 ] && echo -e "$red_text\ndb env creation error, try to create file by yourself and try again$reset_color" && exit    
-    [ ! -f ./environement/.db.env ] || [ ! -s ./environement/.db.env ] && echo "$red_text ERROR on population of environnement/.db.env file$reset_color" && exit
+        echo -e "$DB_URI_ENV_NAME=mongo://$DB_URI" >> ./environement/.api.env
+        [ $? -ne 0 ] && echo -e "$red_text\napi env file creation error, try to create file by yourself and try again$reset_color" && exit    
+        [ ! -f ./environement/.api.env ] || [ ! -s ./environement/.api.env ] && echo "$red_text ERROR on population of environnement/.api.env file$reset_color" && exit
 
-    echo -e "$DB_URI_ENV_NAME=mongo://$DB_URI \n$REDIS_URI_ENV_NAME=redis://redis:6379\n$API_PORT_ENV_NAME=$API_PORT" > ./environement/.api.env
-    [ $? -ne 0 ] && echo -e "$red_text\napi env file creation error, try to create file by yourself and try again$reset_color" && exit    
-    [ ! -f ./environement/.api.env ] || [ ! -s ./environement/.api.env ] && echo "$red_text ERROR on population of environnement/.api.env file$reset_color" && exit
+        echo -e "MONGO_INITDB_ROOT_USERNAME=$DB_USERNAME\nMONGO_INITDB_ROOT_PASSWORD=$DB_PASSWORD" > ./environement/.db.env
+        [ $? -ne 0 ] && echo -e "$red_text\ndb env file creation error, try to create file by yourself and try again$reset_color" && exit
+        [ ! -f ./environement/.db.env ] && [ ! -s ./environement/.db.env ] && echo "$red_text ERROR on population of environnement/.db.env file$reset_color" && exit
+
+    fi  
 
 fi
 
@@ -151,41 +147,58 @@ dev_pattern='^[dD][eE][vV]'
 prod_pattern='^[pP][rR][oO][dD]'
 
 # API DEPLOYEMENT 
-# todo refacto to have mongo database option
-if [[ $BUILD_BACK =~ $true_pattern ]] && [[ $ENV =~ $dev_pattern ]]; then
+if [[ $BUILD_BACK =~ $true_pattern ]]; then
+
+    sed -i "56c\        - $API_PORT:$API_PORT" docker-compose.yml
+    [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on api_dev setting port in compose file$reset_color" && exit
 
     if [[ $BUILD_REDIS =~ $true_pattern ]]; then
-    docker-compose -p $PROJECT_NAME up -d redis postgres api_dev
-    [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on api_dev and databases deployement with compose file$reset_color" && docker-compose -p $PROJECT_NAME down -v && docker rmi -f api_dev && exit 
-    else
-    docker-compose -p $PROJECT_NAME up -d postgres api_dev
-    [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on api_dev and databases deployement with compose file$reset_color" && docker-compose -p $PROJECT_NAME down -v && docker rmi -f api_dev && exit 
+        docker-compose -p $PROJECT_NAME up -d redis
+        [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on api_dev and databases deployement with compose file$reset_color" && docker-compose -p $PROJECT_NAME down -v && docker rmi -f api_dev && exit 
     fi
 
-    docker-compose -p $PROJECT_NAME restart api_dev
-    [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured when restarting api_dev service in compose file$reset_color" && exit    
+    if [[ $DB_CHOICE =~ $postgres_pattern ]]; then
 
-    echo -e "$green_text\nAPI DEPLOYED ON DEV ENV WITH SUCCESS ON PORT $API_PORT$reset_color"
+        docker-compose -p $PROJECT_NAME up -d postgres
+        [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on api_dev and databases deployement with compose file$reset_color" && docker-compose -p $PROJECT_NAME down -v && docker rmi -f api_dev && exit 
 
-elif [[ $BUILD_BACK =~ $true_pattern ]] && [[ $ENV =~ $prod_pattern ]]; then
-    # todo adapt dev logic to prod
-    docker-compose -p $PROJECT_NAME up -d redis postgres api_prod
-    [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on api_prod and databases deployement with compose file$reset_color" && exit    
+        POSTGRES_CONTAINER_NAME=$(docker-compose -p $PROJECT_NAME ps | grep postgres | awk '{print $1}')    
 
-    docker-compose -p $PROJECT_NAME restart api_prod
-    [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured when restarting api_dev service in compose file$reset_color" && exit    
+    elif [[ $DB_CHOICE =~ $mongo_pattern ]];then
 
-    docker image rm node:lts-alpine
-    [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on delete of base nodeJS image$reset_color" && exit    
+        docker-compose -p $PROJECT_NAME up -d mongo
+        [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on api_dev and databases deployement with compose file$reset_color" && docker-compose -p $PROJECT_NAME down -v && docker rmi -f api_dev && exit 
+    
+        MONGO_CONTAINER_NAME=$(docker-compose -p $PROJECT_NAME ps | grep mongo | awk '{print $1}')    
 
-    echo -e "$green_text\nAPI DEPLOYED ON PRODUCTION ENV WITH SUCCESS ON PORT $API_PORT$reset_color"
+    fi    
+
+    if [[ $ENV =~ $dev_pattern ]]; then
+
+        docker-compose -p $PROJECT_NAME up -d api_dev
+        [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured when restarting api_dev service in compose file$reset_color" && exit    
+    
+        echo -e "$green_text\nAPI DEPLOYED ON DEV ENV WITH SUCCESS ON PORT $API_PORT$reset_color"
+
+    elif [[ $ENV =~ $prod_pattern ]];then
+
+        docker-compose -p $PROJECT_NAME up -d api_prod
+        [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured when restarting api_dev service in compose file$reset_color" && exit    
+
+        docker rmi node:lts-alpine
+        [ $? -ne 0 ] && echo -e "$red_text\napi env file creation error, try to create file by yourself and try again$reset_color" && exit    
+    
+
+        echo -e "$green_text\nAPI DEPLOYED ON PRODUCTION ENV WITH SUCCESS ON PORT $API_PORT$reset_color"
+    fi 
+
 
 fi
 
 # FRONT DEPLOYEMENT
 if [[ $BUILD_FRONT =~ $true_pattern ]] && [[ $ENV =~ $dev_pattern ]]; then
 
-    sed -i "77c\        - $FRONT_PORT:80" docker-compose.yml
+    sed -i "71c\        - $FRONT_PORT:80" docker-compose.yml
     [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on front_dev setting port in compose file$reset_color" && exit    
 
     docker-compose -p $PROJECT_NAME up -d front_dev
@@ -194,13 +207,20 @@ if [[ $BUILD_FRONT =~ $true_pattern ]] && [[ $ENV =~ $dev_pattern ]]; then
     echo -e "$green_text\nFRONT DEPLOYED ON DEV ENV WITH SUCCESS ON PORT $FRONT_PORT$reset_color"
 elif [[ $BUILD_FRONT =~ $true_pattern ]] && [[ $ENV =~ $prod_pattern ]]; then
 
-    #todo finish this part
     docker-compose -p $PROJECT_NAME up -d front_prod
     [ $? -ne 0 ] && echo -e "$red_text\napi env file creation error, try to create file by yourself and try again$reset_color" && exit    
 
-    docker image rm node:lts-alpine
+    docker rmi nginx:stable-alpine
     [ $? -ne 0 ] && echo -e "$red_text\napi env file creation error, try to create file by yourself and try again$reset_color" && exit    
+    
     echo -e "$green_text\nFRONT DEPLOYED ON PROD ENV WITH SUCCESS ON PORT 80 AND 443$reset_color"
+
+fi
+
+if [[ $DEMO_MODE =~ $true_pattern ]]; then
+
+    FRONT_CONTAINER_NAME=$(docker-compose -p $PROJECT_NAME ps | grep front | awk '{print $1}')  
+    docker exec -it $FRONT_CONTAINER_NAME sh -c 'sed -i "43c\    <h3>Front container ip $(hostname -i)</h3>" /bin/www/index.html && sed -i "42c\    <h3>Front container id $(hostname)</h3>" /bin/www/index.html'  
 
 fi
 
@@ -209,41 +229,18 @@ fi
 #OPTIONS
 
 # SETUP SQITCH TO DEPLOY DATABASE STRUCTURE
-if   [[ $ENABLE_OPTIONS =~ $true_pattern ]] && [[ $ENABLE_SQITCH =~ $true_pattern ]] && [[ $BUILD_BACK =~ $true_pattern ]]; then
-    sleep 1
+if   [[ $ENABLE_OPTIONS =~ $true_pattern ]] && [[ $ENABLE_SQITCH =~ $true_pattern ]] && [[ $BUILD_BACK =~ $true_pattern ]] && [[ $DB_CHOICE =~ $postgres_pattern ]]; then
 
-    if [[ ! -d ./modules ]]; then mkdir ./modules; fi
-    [ $? -ne 0 ] && echo -e "$red_text\nmodules folder creation error, try to create folder by yourself and try again$reset_color" && exit
-    [ ! -d ./modules ] && echo -e "$red_text\nmodules folder creation error, try to create folder by yourself and try again$reset_color" && exit
-
-    echo -e "apt-get update > /dev/null && apt-get install sqitch -y > /dev/null && sqitch init $SQITCH_PROJECT_NAME --target db:pg://$DB_USERNAME:$DB_PASSWORD@postgres:5432/$DB_USERNAME && sqitch deploy" > ./modules/sqitch.sh
-    [ $? -ne 0 ] && echo -e "$red_text\nsqitch module file creation error, try to create file by yourself and try again$reset_color" && exit
-    [ ! -f ./modules/sqitch.sh ] && [ ! -s ./modules/sqitch.sh ] && echo -e "$red_text\nsqitch module file creation error, try to create file by yourself and try again$reset_color" && exit
+    POSTGRES_CONTAINER_IP=$(docker inspect -f '{{ range.NetworkSettings.Networks }}{{.IPAddress}}{{end}}' $POSTGRES_CONTAINER_NAME)
+    [ $? -ne 0 ] || [[ -z $POSTGRES_CONTAINER_IP ]] && echo -e "$red_text\nGet postgres container ip ERROR$reset_color" && exit    
     
-    docker-compose -p $PROJECT_NAME up -d sqitch
-    [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on build and run utils service in compose file$reset_color" && exit
+    ACTUAL_ABSOLUTE_PATH=$(realpath .)
+    [ $? -ne 0 ] || [[ -z $ACTUAL_ABSOLUTE_PATH ]] && echo -e "$red_text\nGet absolute path of docker folder ERROR$reset_color" && exit    
 
-    docker cp ./modules/sqitch.sh $PROJECT_NAME\_sqitch_1:/
-    if [ $? -ne 0 ]; then
-    docker cp ./modules/sqitch.sh $PROJECT_NAME-sqitch-1:/
-    [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on copy of sqitch.sh file in utils container$reset_color" && exit
-    fi
-
-
-    docker cp $SQITCH_FOLDER_PATH/. $PROJECT_NAME\_sqitch_1:/
-    if [ $? -ne 0 ]; then
-    docker cp $SQITCH_MIGRATIONS_FOLDER_NAME/. $PROJECT_NAME-sqitch-1:/
-    [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on copy of sqitch migrations folder in utils container$reset_color" && exit    
-    fi
-
-    docker exec -i $PROJECT_NAME\_sqitch_1 bash -c "bash sqitch.sh"
-    if [ $? -ne 0 ]; then
-    docker exec -i $PROJECT_NAME-sqitch-1 bash -c "bash sqitch.sh"
-    [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on execution of sqitch.sh script inside utils container$reset_color" && exit
-    fi
-
-    docker-compose -p $PROJECT_NAME rm -sf sqitch
-    [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on stopping and removing of utils container$reset_color" && exit
+    curl -s -L https://git.io/JJKCn -o sqitch > /dev/null && chmod +x sqitch && mv sqitch $SQITCH_CONF_FILE_PARENT_DIR && cd $SQITCH_CONF_FILE_PARENT_DIR && ./sqitch target add docker db:pg://$DB_USERNAME:$DB_PASSWORD@$POSTGRES_CONTAINER_IP:5432/$DB_USERNAME && ./sqitch deploy docker && ./sqitch target remove docker && rm sqitch && cd $ACTUAL_ABSOLUTE_PATH
+    [ $? -ne 0 ] && echo -e "$red_text\nsqitch execution error, try to create file by yourself and try again$reset_color" && exit
+     
+    if [[ $ENV =~ $prod_pattern ]]; then docker rmi sqitch/sqitch:latest > /dev/null; fi
 
     echo -e "$green_text\nDATABASE STRUCTURE DEPLOYEMENT WITH SQITCH SUCCESSFULLY DONE$reset_color"
 else echo "sqitch option not used"
@@ -252,30 +249,24 @@ fi
 
 # SETUP SEEDING OPTION
 if   [[ $ENABLE_OPTIONS =~ $true_pattern ]] && [[ $ENABLE_SEEDING =~ $true_pattern ]] && [[ $BUILD_BACK =~ $true_pattern ]]; then
-    sleep 1
 
     if [[ $DB_CHOICE =~ $postgres_pattern ]]; then
-
-        
-
-        docker cp $SEEDING_FILE_PATH $PROJECT_NAME\_postgres_1:/
-        if [ $? -ne 0 ]; then
-        docker cp $SEEDING_FILE_PATH $PROJECT_NAME-postgres-1:/
+      
+        docker cp $SEEDING_FILE_PATH $POSTGRES_CONTAINER_NAME:/
         [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on copy of seeding file inside postgres database container$reset_color" && exit
-        fi
-
-
-        docker exec -i $PROJECT_NAME\_postgres_1 sh -c "psql -f /$SEEDING_FILE_NAME postgres://$DB_URI && rm /$SEEDING_FILE_NAME"
-        if [ $? -ne 0 ]; then
-        docker exec -i $PROJECT_NAME-postgres-1 sh -c "psql -f /$SEEDING_FILE_NAME postgres://$DB_URI && rm /$SEEDING_FILE_NAME"
+   
+        docker exec -i $POSTGRES_CONTAINER_NAME sh -c "psql -f /$SEEDING_FILE_NAME postgres://$DB_URI && rm /$SEEDING_FILE_NAME"
         [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on execution of seeding file inside postgres database container$reset_color" && exit
-        fi
 
-        echo -e "$green_text\nPOSTGRES DATABASE SEEDING SUCCESSFULLY DONE$reset_color"  
+        echo -e "$green_text\nPOSTGRESQL DATABASE SEEDING SUCCESSFULLY DONE$reset_color"  
     else
-        # todo same thing for mongo database
-        docker cp $PATH_TO_SEEDING_FILE/$SEEDING_FILE_NAME $PROJECT_NAME\_mongo_1:/
-        docker exec -i $PROJECT_NAME\_mongo_1 sh -c "mongo -f /$SEEDING_FILE_NAME mongo://$DB_URI && rm /$SEEDING_FILE_NAME"   
+        docker cp $SEEDING_FILE_PATH $MONGO_CONTAINER_NAME:/
+        [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on copy of seeding file inside postgres database container$reset_color" && exit
+   
+        docker exec -i $MONGO_CONTAINER_NAME sh -c "mongorestore -f /$SEEDING_FILE_NAME postgres://$DB_URI && rm /$SEEDING_FILE_NAME"
+        [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on execution of seeding file inside postgres database container$reset_color" && exit
+
+        echo -e "$green_text\nMONGODB DATABASE SEEDING SUCCESSFULLY DONE$reset_color"   
     fi
 else echo "seeding option not used"
 fi
@@ -291,109 +282,129 @@ if [[ $ENABLE_OPTIONS =~ $true_pattern ]] && [[ $ENABLE_DUMP_CRON =~ $true_patte
 
     if [[ $DB_CHOICE =~ $postgres_pattern ]]; then
 
-        echo -e "DATE=\$(date +%F-%H_%M)\npg_dump postgres://$DB_URI > /home/postgres\$DATE.sql\nfind /home/ -type f -ctime +$DELETE_OLDER_THAN_DAYS -execdir rm -- '{}' \;" > ./modules/cron.sh
+        echo -e "DATE=\$(date +%F-%H_%M)\n/usr/bin/pg_dump postgres://$DB_URI >> /home/postgres_$PROJECT_NAME\_\$DATE.sql\n/usr/bin/find /home/ -type f -mtime +$DELETE_OLDER_THAN_DAYS -exec rm -- '{}' \;" > ./modules/cron.sh
         [ $? -ne 0 ] && echo -e "$red_text\ncron module file creation error, try to create file by yourself and try again$reset_color" && exit
         [ ! -f ./modules/cron.sh ] && [ ! -s ./modules/cron.sh ] && echo -e "$red_text\ncron module file creation error, try to create file by yourself and try again$reset_color" && exit
 
-        sed -i "4c RUN apt-get install postgresql-client cron -y > /dev/null" ./dockerFiles/utils.Dockerfile
+        sed -i "3c RUN apk add --update --no-cache postgresql-client && rm  -rf /tmp/* /var/cache/apk/* > /dev/null" ./dockerFiles/utils.Dockerfile
         [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on setting run command in utils dockerfile file$reset_color" && exit    
-
-        sed -i "5c RUN echo \"$CRONJOB_SCHEDULE /bin/sh /root/cron.sh >> /root/cron.log 2>&1\" > dump_cron && crontab dump_cron && rm dump_cron && service cron restart" ./dockerFiles/utils.Dockerfile
-        [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on setting run command in utils dockerfile file$reset_color" && exit    
-
 
     else
-        # todo same logic for mongo database
-        sed -i "5c RUN echo \"$CRONJOB_SCHEDULE /bin/sh /root/cron.sh >> /root/cron.log 2>&1\" > dump_cron && crontab dump_cron && rm dump_cron && service cron restart" ./dockerFiles/utils.Dockerfile
+        echo -e "DATE=\$(date +%F-%H_%M)\n/usr/bin/mongodump mongo://$DB_URI >> /home/mongo_$PROJECT_NAME\_\$DATE.json\n/usr/bin/find /home/ -type f -mtime +$DELETE_OLDER_THAN_DAYS -exec rm -- '{}' \;" > ./modules/cron.sh
+        [ $? -ne 0 ] && echo -e "$red_text\ncron module file creation error, try to create file by yourself and try again$reset_color" && exit
+        [ ! -f ./modules/cron.sh ] && [ ! -s ./modules/cron.sh ] && echo -e "$red_text\ncron module file creation error, try to create file by yourself and try again$reset_color" && exit
+
+        sed -i "3c RUN apk add --update --no-cache mongo-client && rm  -rf /tmp/* /var/cache/apk/* > /dev/null" ./dockerFiles/utils.Dockerfile
         [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on setting run command in utils dockerfile file$reset_color" && exit    
+   
     fi 
 
-    #SETUP SENDING DUMPED BACKUP FILE OVER SSH IF TRUE
-    if [[ $ENABLE_BACKUP_SSH =~ $true_pattern  ]]; then
 
-        echo " " >> ./dockerFiles/utils.Dockerfile
-        sed -i "7c RUN apt-get install openssh-server rsync -y > /dev/null && echo | ssh-keygen -P ''" ./dockerFiles/utils.Dockerfile
-        [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on setting run command in utils dockerfile file$reset_color" && exit    
 
-    else
-        sed -i "7d" ./dockerFiles/utils.Dockerfile
-        echo "ssh server backup option not used"
+    sed -i "4c COPY ./docker/modules/cron.sh ." ./dockerFiles/utils.Dockerfile
+    [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on setting run command in utils dockerfile file$reset_color" && exit 
 
-    fi
-
-    sed -i "6c COPY ./docker/modules/cron.sh ." ./dockerFiles/utils.Dockerfile
+    echo " " >> ./dockerFiles/utils.Dockerfile
+    sed -i "5c RUN echo \"$CRONJOB_SCHEDULE /root/cron.sh >> /root/cron.log\" > cron.txt && /usr/bin/crontab cron.txt && rm cron.txt && chmod 755 cron.sh" ./dockerFiles/utils.Dockerfile
     [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on setting run command in utils dockerfile file$reset_color" && exit    
-
-
-    docker-compose -p $PROJECT_NAME up -d utils
-    [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on starting utils service with build of utils image$reset_color" && exit    
-
-    echo -e "$green_text\nCRON SCHEDULE FOR DB DUMP SUCCESSFULLY DONE$reset_color" 
-
-    if [[ $ENABLE_BACKUP_SSH =~ $true_pattern ]]; then
-        echo "${green_text}COPY THIS KEY INTO YOUR authorized_keys FILE${reset_color}"
-        echo "${green_text}----------------------------------------------------------------------------${reset_color}"
-
-        docker exec -it $PROJECT_NAME\_utils_1 bash -c "cat ~/.ssh/id_rsa.pub"
-        if [ $? -ne 0 ]; then
-        docker exec -it $PROJECT_NAME-utils-1 bash -c "cat ~/.ssh/id_rsa.pub"
-        [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on execution of commands for showing ssh id_rsa.pub inside utils container$reset_color" && exit
-        fi
-        echo "${green_text}----------------------------------------------------------------------------${reset_color}"
-
-        while true; do
-            read -p "Type yes when key is copied ?  " yn
-            case $yn in
-                [Yy]* ) break;;
-            * ) echo "Please answer yes";;
-            esac
-        done
-    fi
-
-    # docker rmi debian:stable-slim
-    # [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on deleting unused debian image$reset_color" && exit    
-
-
- 
+   
 
 
 else echo "cron dump option not used"
 fi
 
 
+#SETUP SENDING DUMPED BACKUP FILE OVER SSH IF TRUE
+if [[ $ENABLE_BACKUP_SSH =~ $true_pattern  ]] && [[ $ENABLE_DUMP_CRON =~ $true_pattern ]] && [[ $BUILD_BACK =~ $true_pattern ]]; then
 
+    if [[ -n $BACKUP_SERVER_SSH_PASSWORD ]]; then
 
-if [[ ! $ENABLE_OPTIONS =~ $true_pattern ]] || [[ ! $ENABLE_DUMP_CRON =~ $true_pattern ]]; then
-  
-    docker volume rm $PROJECT_NAME\_dump_files
-    if [ $? -ne 0 ]; then
-    docker volume rm $PROJECT_NAME-dump-files
-    [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on removing unused volumes$reset_color" && exit    
+    echo " " >> ./modules/cron.sh && sed -i "4c  /usr/bin/sshpass -p $BACKUP_SERVER_SSH_PASSWORD /usr/bin/rsync -aqrhe \"/usr/bin/ssh -o StrictHostKeyChecking=no -p $BACKUP_SERVER_SSH_PORT\" /home/ $BACKUP_SERVER_SSH_URI:$PATH_ON_BACKUP_SERVER" ./modules/cron.sh
+    [ $? -ne 0 ] && echo -e "$red_text\ncron module file creation error, try to create file by yourself and try again$reset_color" && exit
+    [ ! -f ./modules/cron.sh ] && [ ! -s ./modules/cron.sh ] && echo -e "$red_text\ncron module file creation error, try to create file by yourself and try again$reset_color" && exit
+
+    echo " " >> ./dockerFiles/utils.Dockerfile
+    sed -i "7c RUN apk add --update --no-cache openssh-client rsync sshpass && rm  -rf /tmp/* /var/cache/apk/* > /dev/null" ./dockerFiles/utils.Dockerfile
+    [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on setting run command in utils dockerfile file$reset_color" && exit    
+
+    echo -e "timeout 3 sh -c 'sshpass -p $BACKUP_SERVER_SSH_PASSWORD ssh -o StrictHostKeyChecking=no -p $BACKUP_SERVER_SSH_PORT -q $BACKUP_SERVER_SSH_URI exit'; if [[ \$? -ne 0 ]]; then echo 'CANNOT ESTABLISH CONNECTION' && exit 1; else echo 'CONNECTION ESTABLISHED' && exit 0; fi
+    " > ./modules/ssh-check.sh
+    [ $? -ne 0 ] && echo -e "$red_text\nssh-check module file creation error, try to create file by yourself and try again$reset_color" && exit
+    [ ! -f ./modules/ssh-check.sh ] && [ ! -s ./modules/ssh-check.sh ] && echo -e "$red_text\nssh-check module file creation error, try to create file by yourself and try again$reset_color" && exit
+
+    else
+
+    echo " " >> ./modules/cron.sh && sed -i "4c  /usr/bin/rsync -aqrhe \"/usr/bin/ssh -o StrictHostKeyChecking=no -p $BACKUP_SERVER_SSH_PORT\" /home/ $BACKUP_SERVER_SSH_URI:$PATH_ON_BACKUP_SERVER" ./modules/cron.sh
+    [ $? -ne 0 ] && echo -e "$red_text\ncron module file creation error, try to create file by yourself and try again$reset_color" && exit
+    [ ! -f ./modules/cron.sh ] && [ ! -s ./modules/cron.sh ] && echo -e "$red_text\ncron module file creation error, try to create file by yourself and try again$reset_color" && exit
+
+    echo " " >> ./dockerFiles/utils.Dockerfile
+    sed -i "7c RUN apk add --update --no-cache openssh-client rsync && rm  -rf /tmp/* /var/cache/apk/* > /dev/null && echo | ssh-keygen -P ''" ./dockerFiles/utils.Dockerfile
+    [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on setting run command in utils dockerfile file$reset_color" && exit    
+
+    echo -e "timeout 3 sh -c 'ssh -o StrictHostKeyChecking=no -p $BACKUP_SERVER_SSH_PORT -q $BACKUP_SERVER_SSH_URI exit'; if [[ \$? -ne 0 ]]; then echo 'CANNOT ESTABLISH CONNECTION' && exit 1; else echo 'CONNECTION ESTABLISHED' && exit 0; fi
+    " > ./modules/ssh-check.sh
+    [ $? -ne 0 ] && echo -e "$red_text\nssh-check module file creation error, try to create file by yourself and try again$reset_color" && exit
+    [ ! -f ./modules/ssh-check.sh ] && [ ! -s ./modules/ssh-check.sh ] && echo -e "$red_text\nssh-check module file creation error, try to create file by yourself and try again$reset_color" && exit
+
     fi
+
+
+    echo " " >> ./dockerFiles/utils.Dockerfile
+    sed -i "8c COPY ./docker/modules/ssh-check.sh ." ./dockerFiles/utils.Dockerfile
+    [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on setting run command in utils dockerfile file$reset_color" && exit    
+
+    docker-compose -p $PROJECT_NAME up -d utils > /dev/null
+    [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on starting utils service with build of utils image$reset_color" && exit    
+    UTILS_CONTAINER_NAME=$(docker-compose -p $PROJECT_NAME ps | grep utils | awk '{print $1}')
+
+    echo -e "$green_text\nCRON SCHEDULE FOR DB DUMP SUCCESSFULLY DONE$reset_color"
+
+    if [[ -z $BACKUP_SERVER_SSH_PASSWORD ]]; then
+
+        echo "${green_text}COPY THIS KEY INTO YOUR authorized_keys FILE${reset_color}"
+        echo "${green_text}----------------------------------------------------------------------------"
+        docker exec -it $UTILS_CONTAINER_NAME sh -c "cat ~/.ssh/id_rsa.pub"
+        [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on starting utils service with build of utils image$reset_color" && exit    
+
+        echo "----------------------------------------------------------------------------${reset_color}"
+
+        while true; do
+            read -p "Type yes when key is copied ?  " yn
+            case $yn in
+                [Yy]* ) break;;
+            * ) echo "Please answer yes or no.";;
+            esac
+        done
+    fi 
+
+    docker exec -it $UTILS_CONTAINER_NAME sh -c "sh /root/ssh-check.sh" > /dev/null
+    if [ $? -ne 0 ]; then
+        echo "${red_text}SSH CONNECTION CANNOT BE ESTABLISHED WITH YOUR BACKUP SERVER${reset_color}"
+    else
+        echo "${green_text}SSH CONNECTION ESTABLISHED WITH YOUR BACKUP SERVER${reset_color}"
+    fi
+
+else
+    sed -i "8d" ./dockerFiles/utils.Dockerfile
+    sed -i "7d" ./dockerFiles/utils.Dockerfile
+    sed -i "4d" ./modules/cron.sh
+    echo "ssh server backup option not used"
+
+    docker-compose -p $PROJECT_NAME up -d utils > /dev/null
+    [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on starting utils service with build of utils image$reset_color" && exit    
+    UTILS_CONTAINER_NAME=$(docker-compose -p $PROJECT_NAME ps | grep utils | awk '{print $1}')
+
+    echo -e "$green_text\nCRON SCHEDULE FOR DB DUMP SUCCESSFULLY DONE$reset_color" 
+
 fi
 
 
-UNTAGED_IMAGES=$(docker images -f dangling=true -q)
-[ $? -ne 0 ] && echo -e "$red_text\nUNTAGED IMAGES VARIABLE ERROR$reset_color" && exit
+if [[ ! $ENABLE_OPTIONS =~ $true_pattern ]] || [[ ! $ENABLE_DUMP_CRON =~ $true_pattern ]]; then
 
-COMPOSE_IMAGES=$(docker-compose -p $PROJECT_NAME images -q)
-[ $? -ne 0 ] && echo -e "$red_text\nCOMPOSE IMAGES VARIABLE ERROR$reset_color" && exit
-
-if [[ -n ${COMPOSE_IMAGES[*]} ]] && [[ -n ${UNTAGED_IMAGES[*]} ]]; then
-    for UNTAGED_IMAGE_ID in $UNTAGED_IMAGES; do
-        if [[ ${COMPOSE_IMAGES[*]} =~ $UNTAGED_IMAGE_ID ]]; then
-
-            BINGO=$(docker ps --filter ancestor=$UNTAGED_IMAGE_ID | awk '{ print $1 }' | grep [0-9] )
-            [ $? -ne 0 ] && echo -e "$red_text\nBINGO VARIABLE ERROR$reset_color" && exit
-            echo $BINGO
-
-            docker stop $BINGO && docker rm $BINGO
-            [ $? -ne 0 ] && echo -e "$red_text\nSTOP AND REMOVE BINGO$reset_color" && exit
-
-            docker rmi -f $UNTAGED_IMAGE_ID
-            [ $? -ne 0 ] && echo -e "$red_text\nDOCKER RMI BINGO ERROR$reset_color" && exit
-
-        fi
-    done
+    DUMP_FILES_VOLUME_NAME=$(docker volume ls | grep $PROJECT_NAME.dump | awk '{print $2}')
+  
+    docker volume rm $DUMP_FILES_VOLUME_NAME
+    [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on removing unused volumes$reset_color" && exit    
 
 fi

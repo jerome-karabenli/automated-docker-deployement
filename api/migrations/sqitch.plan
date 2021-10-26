@@ -1,0 +1,6 @@
+%syntax-version=1.0.0
+%project=ochalet
+
+init 2021-09-21T13:42:44Z jerome <jkarabenli.occlock@gmail.com> # init db
+user_function 2021-09-21T16:05:44Z jerome <jkarabenli.occlock@gmail.com> # create user functions
+sql_create_update_functions 2021-09-22T09:31:11Z BenjCH <benjamin.choron@outlook.com> # create all sql functions for create and update

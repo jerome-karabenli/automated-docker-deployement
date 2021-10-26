@@ -1,6 +1,6 @@
 version: '3.7'
 services:
-    mongo_dev:
+    mongo:
       networks:
         - network
       image: mongo:4.0.26
@@ -35,9 +35,6 @@ services:
         context: ../
         dockerfile: ./docker/dockerFiles/api.prod.Dockerfile
       image: api_prod
-      depends_on:
-        - redis
-        - postgres
       env_file:
         - ./environement/.api.env
       restart: on-failure
@@ -51,9 +48,6 @@ services:
         context: ../
         dockerfile: ./docker/dockerFiles/api.dev.Dockerfile
       image: api_dev
-      depends_on:
-        - redis
-        - postgres
       env_file:
         - ./environement/.api.env
       volumes:
@@ -87,15 +81,9 @@ services:
         context: ../
         dockerfile: ./docker/dockerFiles/utils.Dockerfile
       image: utils
-      command: " tail -f /dev/null"
       volumes:
         - dump_files:/home/
 
-    sqitch:
-      networks:
-        - network
-      image: debian:stable-slim
-      command: " tail -f /dev/null"
 
       
 networks:
