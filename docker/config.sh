@@ -1,5 +1,7 @@
 # REQUIERED VARIABLES
 ENV="" # "dev" | "prod" on dev https is not used
+NODE_ENV_NAME="" # set here the same env variable name for NODE ENV as in your original .env file for your api
+
 PROJECT_NAME="" # give a name for docker-compose project must be lowercase
 
 BUILD_FRONT="" # if true nginx container is used for front deployement
@@ -9,12 +11,12 @@ BUILD_BACK="" # if true chosen database & nodeJS container is used for back depl
 DB_CHOICE="" # choose between "postgres" and "mongo"
 DB_USERNAME=""
 DB_PASSWORD=""
-DB_URI_ENV_NAME="" # set here the same env variable name for db uri as in your original .env file
+DB_URI_ENV_NAME="" # set here the same env variable name for db uri as in your original .env file for your api
 
 BUILD_REDIS="" # set this to true if your api use redis
-REDIS_URI_ENV_NAME="" # set here the same env variable name for redis uri as in your original .env file
+REDIS_URI_ENV_NAME="" # set here the same env variable name for redis uri as in your original .env file for your api
 
-API_PORT_ENV_NAME="" # set here the same env variable name for API PORT as in your original .env file
+API_PORT_ENV_NAME="" # set here the same env variable name for API PORT as in your original .env file for your api
 API_PORT=""
 
 # OPTIONAL VARIABLES
@@ -23,8 +25,6 @@ ENABLE_OPTIONS="" # set this to true to activate options
 
 ## use sqitch for db structure only available on sql databases. If you want to restore backuped dump file use seeding option instead.
 ENABLE_SQITCH=""
-SQITCH_PROJECT_NAME="" # you must provide the same project name as in sqitch.plan
-SQITCH_MIGRATIONS_FOLDER_NAME="" # sqitch top-dir must be inside api folder
 
 ## seeding or backup database
 ENABLE_SEEDING=""
@@ -33,12 +33,13 @@ SEEDING_FILE_NAME="" # give the name of your seeding or backup file, must be in 
 ## setup cronjob for periodical dump
 ENABLE_DUMP_CRON=""
 CRONJOB_SCHEDULE="*/1 * * * *" # set your desired schedule as cron style
-DELETE_OLDER_THAN_DAYS="3" # set number of days you want to keep dump files
+DELETE_OLDER_THAN_DAYS="" # set number of days you want to keep dump files
 
-## send db dump to another server via ssh for backup cronjob option must be activated
-ENABLE_BACKUP_SSH="false"
+## send db dump to another server via ssh for backup, cronjob option MUST be activated
+ENABLE_BACKUP_SSH=""
 BACKUP_SERVER_SSH_URI="" # this is your ssh connection uri
 BACKUP_SERVER_SSH_PORT="" # set your ssh server port. Default is 22.
+BACKUP_SERVER_SSH_PASSWORD="" # if empty ssh key check is used instead
 PATH_ON_BACKUP_SERVER="" # path in your backup server where to store dump files
 
 
@@ -48,6 +49,7 @@ PATH_ON_BACKUP_SERVER="" # path in your backup server where to store dump files
 
 
 export ENV
+export NODE_ENV_NAME
 export ENABLE_OPTIONS
 export PROJECT_NAME
 
@@ -82,3 +84,4 @@ export ENABLE_BACKUP_SSH
 export BACKUP_SERVER_SSH_URI
 export BACKUP_SERVER_SSH_PORT
 export PATH_ON_BACKUP_SERVE
+export BACKUP_SERVER_SSH_PASSWORD
