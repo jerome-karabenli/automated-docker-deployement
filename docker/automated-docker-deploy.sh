@@ -469,7 +469,7 @@ if [[ ! $ENABLE_OPTIONS =~ $true_pattern ]] || [[ ! $ENABLE_DUMP_CRON =~ $true_p
 
     DUMP_FILES_VOLUME_NAME=$(docker volume ls | grep $PROJECT_NAME.dump | awk '{print $2}')
   
-    docker volume rm $DUMP_FILES_VOLUME_NAME
+    docker volume rm $DUMP_FILES_VOLUME_NAME > /dev/null
     [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on removing unused volumes$reset_color" && exit    
 
 fi

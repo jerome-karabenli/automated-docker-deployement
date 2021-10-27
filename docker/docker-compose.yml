@@ -58,7 +58,6 @@ services:
       build: 
         context: ../
         dockerfile: ./docker/dockerFiles/utils.Dockerfile
-      image: utils
       volumes:
         - dump_files:/home/
 
