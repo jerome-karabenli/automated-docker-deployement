@@ -91,7 +91,8 @@ services:
 
       
 networks:
-  network:
+  back:
+  front:
 
 volumes:
   db_data:
