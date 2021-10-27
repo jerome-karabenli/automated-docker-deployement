@@ -1,11 +1,11 @@
 # REQUIERED VARIABLES
 ENV="" # "dev" | "prod" on dev https is not used
-NODE_ENV_NAME="" # set here the same env variable name for NODE ENV as in your original .env file for your api
 
 PROJECT_NAME="" # give a name for docker-compose project must be lowercase
 
 BUILD_FRONT="" # if true nginx container is used for front deployement
 FRONT_PORT="" # this is only if BUILD_FRONT is true and ENV is dev, on PROD env used ports are 80 and 443
+DOMAIN_NAME="" # only on production env
 
 BUILD_BACK="" # if true chosen database & nodeJS container is used for back deployement
 DB_CHOICE="" # choose between "postgres" and "mongo"
@@ -21,22 +21,22 @@ API_PORT=""
 
 # OPTIONAL VARIABLES
 
-ENABLE_OPTIONS="" # set this to true to activate options
+ENABLE_OPTIONS="false" # set this to true to activate options
 
 ## use sqitch for db structure only available on sql databases. If you want to restore backuped dump file use seeding option instead.
-ENABLE_SQITCH=""
+ENABLE_SQITCH="false" # if true sqitch.conf file must be present in api folder
 
 ## seeding or backup database
-ENABLE_SEEDING=""
+ENABLE_SEEDING="false"
 SEEDING_FILE_NAME="" # give the name of your seeding or backup file, must be in api folder
 
 ## setup cronjob for periodical dump
-ENABLE_DUMP_CRON=""
-CRONJOB_SCHEDULE="*/1 * * * *" # set your desired schedule as cron style
+ENABLE_DUMP_CRON="false"
+CRONJOB_SCHEDULE="" # set your desired schedule as cron style
 DELETE_OLDER_THAN_DAYS="" # set number of days you want to keep dump files
 
 ## send db dump to another server via ssh for backup, cronjob option MUST be activated
-ENABLE_BACKUP_SSH=""
+ENABLE_BACKUP_SSH="false"
 BACKUP_SERVER_SSH_URI="" # this is your ssh connection uri
 BACKUP_SERVER_SSH_PORT="" # set your ssh server port. Default is 22.
 BACKUP_SERVER_SSH_PASSWORD="" # if empty ssh key check is used instead
@@ -55,6 +55,7 @@ export PROJECT_NAME
 
 export BUILD_FRONT
 export FRONT_PORT
+export DOMAIN_NAME
 
 export BUILD_BACK
 export DB_CHOICE

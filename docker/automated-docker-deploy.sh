@@ -23,10 +23,17 @@ prod_pattern='^[pP][rR][oO][dD]'
 
 source ./config.sh; 
 
-SEEDING_FILE_PATH=$(find ../api -name $SEEDING_FILE_NAME)
-SQITCH_CONF_FILE_EXIST=$(find ../api -name sqitch.conf)
-SQITCH_CONF_FILE_PARENT_DIR=$(dirname -- "$SQITCH_CONF_FILE_EXIST")
+if [[ $BUILD_BACK =~ $true_pattern ]]; then
+
+    if [[ $ENABLE_SEEDING =~ $true_pattern ]]; then 
+        SEEDING_FILE_PATH=$(find ../api -name $SEEDING_FILE_NAME) 
+    fi
+    if [[ $ENABLE_SQITCH =~ $true_pattern ]]; then
+        SQITCH_CONF_FILE_EXIST=$(find ../api -name sqitch.conf)
+        SQITCH_CONF_FILE_PARENT_DIR=$(dirname -- "$SQITCH_CONF_FILE_EXIST")
+    fi
 ENV_FILE_EXIST=$(find ../api -name .env -o -name .ENV)
+fi
 
 # GLOBAL VARIABLES CHECK
 [[ ! $ENV =~ $env_pattern ]] && echo "$red_text ENV MUST BE dev OR prod$reset_color" && exit
@@ -35,6 +42,10 @@ ENV_FILE_EXIST=$(find ../api -name .env -o -name .ENV)
 # FRONT VARIABLES CHECK
 if [[ $BUILD_FRONT =~ $true_pattern ]] && [[ $ENV =~ $dev_pattern ]]; then
     [[ -z $FRONT_PORT ]] || [[ ! $FRONT_PORT =~ $number_pattern ]] && echo -e "$red_text\nFRONT PORT MUST BE NUMBER WITH NO SPACE$reset_color" && exit
+fi
+
+if [[ $BUILD_FRONT =~ $true_pattern ]] && [[ $ENV =~ $prod_pattern ]]; then
+    [[ -z $DOMAIN_NAME ]] && echo -e "$red_text\nIN PROD ENV DOMAIN NAME MUST BE PROVIDED$reset_color" && exit
 fi
 
 # BACK VARIABLES CHECK
@@ -159,7 +170,7 @@ fi
 # API DEPLOYEMENT 
 if [[ $BUILD_BACK =~ $true_pattern ]]; then
 
-    sed -i "56c\        - $API_PORT:$API_PORT" docker-compose.yml
+    sed -i "42c\        - $API_PORT:$API_PORT" docker-compose.yml
     [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on api_dev setting port in compose file$reset_color" && exit
 
     if [[ $BUILD_REDIS =~ $true_pattern ]]; then
@@ -185,19 +196,28 @@ if [[ $BUILD_BACK =~ $true_pattern ]]; then
 
     if [[ $ENV =~ $dev_pattern ]]; then
 
-        docker-compose -p $PROJECT_NAME up -d api_dev
+        sed -i "37c\        target: dev" docker-compose.yml
+        [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on api_dev setting port in compose file$reset_color" && exit
+        
+        docker-compose -p $PROJECT_NAME up -d api
         [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured when restarting api_dev service in compose file$reset_color" && exit    
-    
+
         echo -e "$green_text\nAPI DEPLOYED ON DEV ENV WITH SUCCESS ON PORT $API_PORT$reset_color"
 
     elif [[ $ENV =~ $prod_pattern ]];then
 
-        docker-compose -p $PROJECT_NAME up -d api_prod
+        sed -i "37c\        target: prod" docker-compose.yml
+        [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on api_dev setting port in compose file$reset_color" && exit        
+        
+        docker-compose -p $PROJECT_NAME up -d api
         [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured when restarting api_dev service in compose file$reset_color" && exit    
+
+        docker image prune --filter label=stage=api_dev --force
+        [ $? -ne 0 ] && echo -e "$red_text\napi env file creation error, try to create file by yourself and try again$reset_color" && exit    
 
         docker rmi node:lts-alpine
         [ $? -ne 0 ] && echo -e "$red_text\napi env file creation error, try to create file by yourself and try again$reset_color" && exit    
-    
+        
 
         echo -e "$green_text\nAPI DEPLOYED ON PRODUCTION ENV WITH SUCCESS ON PORT $API_PORT$reset_color"
     fi 
@@ -208,21 +228,41 @@ fi
 # FRONT DEPLOYEMENT
 if [[ $BUILD_FRONT =~ $true_pattern ]] && [[ $ENV =~ $dev_pattern ]]; then
 
-    sed -i "71c\        - $FRONT_PORT:80" docker-compose.yml
+    sed -i "48c\        target: dev" docker-compose.yml
+    [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on api_dev setting port in compose file$reset_color" && exit
+            
+    sed -i "50c\        - $FRONT_PORT:80" docker-compose.yml
     [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on front_dev setting port in compose file$reset_color" && exit    
 
-    docker-compose -p $PROJECT_NAME up -d front_dev
+    if [[ -n $(sed -n 51p docker-compose.yml | grep 443) ]]; then sed -i '51d' docker-compose.yml; fi
+
+    docker-compose -p $PROJECT_NAME up -d front
     [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on front_dev deployement with compose file$reset_color" && docker-compose -p $PROJECT_NAME rm -sf front_dev && exit    
 
     echo -e "$green_text\nFRONT DEPLOYED ON DEV ENV WITH SUCCESS ON PORT $FRONT_PORT$reset_color"
 elif [[ $BUILD_FRONT =~ $true_pattern ]] && [[ $ENV =~ $prod_pattern ]]; then
 
-    docker-compose -p $PROJECT_NAME up -d front_prod
+    sed -i "4c\    server_name $DOMAIN_NAME;" nginx/nginx.prod.conf
+    [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on front_dev setting port in compose file$reset_color" && exit    
+
+    sed -i "48c\        target: prod" docker-compose.yml
+    [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on api_dev setting port in compose file$reset_color" && exit    
+
+    sed -i "50c\        - 8080:80" docker-compose.yml
+    [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on front_dev setting port in compose file$reset_color" && exit 
+
+    sed -i "51c\        - 4430:443" docker-compose.yml
+    [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on front_dev setting port in compose file$reset_color" && exit   
+
+    docker-compose -p $PROJECT_NAME up -d front
+    [ $? -ne 0 ] && echo -e "$red_text\napi env file creation error, try to create file by yourself and try again$reset_color" && exit    
+
+    docker image prune --filter label=stage=front_dev --force
     [ $? -ne 0 ] && echo -e "$red_text\napi env file creation error, try to create file by yourself and try again$reset_color" && exit    
 
     docker rmi nginx:stable-alpine
     [ $? -ne 0 ] && echo -e "$red_text\napi env file creation error, try to create file by yourself and try again$reset_color" && exit    
-    
+
     echo -e "$green_text\nFRONT DEPLOYED ON PROD ENV WITH SUCCESS ON PORT 80 AND 443$reset_color"
 
 fi
