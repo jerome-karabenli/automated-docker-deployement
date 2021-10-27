@@ -236,7 +236,7 @@ if [[ $BUILD_FRONT =~ $true_pattern ]] && [[ $ENV =~ $dev_pattern ]]; then
     sed -i "50c\        - $FRONT_PORT:80\n " docker-compose.yml
     [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on front_dev setting port in compose file$reset_color" && exit    
 
-    if [[ -n $(sed -n 51p docker-compose.yml | grep 443) ]]; then sed -i '51d' docker-compose.yml; fi
+    if [[ -n $(sed -n 52p docker-compose.yml | grep 443) ]]; then sed -i '51d' docker-compose.yml; fi
 
     docker-compose -p $PROJECT_NAME up -d front
     [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on front_dev deployement with compose file$reset_color" && docker-compose -p $PROJECT_NAME rm -sf front_dev && exit    
