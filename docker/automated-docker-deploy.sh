@@ -91,7 +91,7 @@ fi
 
 if [[ $ENV =~ $dev_pattern ]]; then
     while true; do
-        read -p "demo mode ? y/n " yn
+        read -p "demo mode ? It works only in local env y/n " yn
         case $yn in
             [Yy]* ) DEMO_MODE="true"; break;;
             [Nn]* ) DEMO_MODE="false"; break;;
@@ -446,11 +446,10 @@ if [[ $ENABLE_OPTIONS =~ $true_pattern ]] && [[ $ENABLE_BACKUP_SSH =~ $true_patt
         echo "${green_text}SSH CONNECTION ESTABLISHED WITH YOUR BACKUP SERVER${reset_color}"
     fi
 
-elif [[ $ENABLE_OPTIONS =~ $true_pattern ]] && [[ ! $ENABLE_BACKUP_SSH =~ $true_pattern  ]]; then
+elif [[ $ENABLE_OPTIONS =~ $true_pattern ]] && [[ $ENABLE_DUMP_CRON =~ $true_pattern  ]] && [[ ! $ENABLE_BACKUP_SSH =~ $true_pattern  ]]; then
     sed -i "8d" ./dockerFiles/utils.Dockerfile
     sed -i "7d" ./dockerFiles/utils.Dockerfile
     sed -i "4d" ./modules/cron.sh
-    echo "ssh server backup option not used"
 
     docker-compose -p $PROJECT_NAME up -d utils > /dev/null
     [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on starting utils service with build of utils image$reset_color" && exit    
@@ -458,9 +457,10 @@ elif [[ $ENABLE_OPTIONS =~ $true_pattern ]] && [[ ! $ENABLE_BACKUP_SSH =~ $true_
 
     echo -e "$green_text\nCRON SCHEDULE FOR DB DUMP SUCCESSFULLY DONE$reset_color" 
 
+else echo "ssh server backup option not used"
 fi
 
-if [[ $ENV =~ $prod_pattern ]]; then
+if [[ $ENV =~ $prod_pattern ]] && [[ $ENABLE_OPTIONS =~ $true_pattern ]]; then
     docker rmi alpine:latest
 fi
 
