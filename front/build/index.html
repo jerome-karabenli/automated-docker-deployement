@@ -5,11 +5,13 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <script defer>
         (async () => {
-            const result1 = await fetch("http://127.0.0.1:3000/infos")
+            const apiUrl = ""
+            const apiPort = ""
+            const result1 = await fetch(`http://${apiUrl}:${apiPort}/infos`)
             const {id, ip} = await result1.json()
-            const result2 = await fetch("http://127.0.0.1:3000/seeding")
+            const result2 = await fetch(`http://${apiUrl}:${apiPort}/seeding`)
             const datas1 = await result2.json()
-            const result3 = await fetch("http://127.0.0.1:3000/sqitch")
+            const result3 = await fetch(`http://${apiUrl}:${apiPort}/sqitch`)
             const datas2 = await result3.json()
 
             document.querySelector("#api_id").innerHTML = `running api container id: ${id}` 

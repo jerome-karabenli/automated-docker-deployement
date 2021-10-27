@@ -89,14 +89,16 @@ if [[ $ENABLE_BACKUP_SSH =~ $true_pattern ]]; then
 fi 
 
 
-while true; do
-    read -p "demo mode ? y/n " yn
-    case $yn in
-        [Yy]* ) DEMO_MODE="true"; break;;
-        [Nn]* ) DEMO_MODE="false"; break;;
-        * ) echo "Please answer yes or no.";;
-    esac
-done
+if [[ $ENV =~ $dev_pattern ]]; then
+    while true; do
+        read -p "demo mode ? y/n " yn
+        case $yn in
+            [Yy]* ) DEMO_MODE="true"; break;;
+            [Nn]* ) DEMO_MODE="false"; break;;
+            * ) echo "Please answer yes or no.";;
+        esac
+    done
+fi
 
 
 #---------------------------------------------------------------------------------------------------------------------------#
@@ -269,8 +271,17 @@ fi
 
 if [[ $DEMO_MODE =~ $true_pattern ]]; then
 
-    FRONT_CONTAINER_NAME=$(docker-compose -p $PROJECT_NAME ps | grep front | awk '{print $1}')  
-    docker exec -it $FRONT_CONTAINER_NAME sh -c 'sed -i "43c\    <h3>Front container ip $(hostname -i)</h3>" /bin/www/index.html && sed -i "42c\    <h3>Front container id $(hostname)</h3>" /bin/www/index.html'  
+    FRONT_CONTAINER_NAME=$(docker-compose -p $PROJECT_NAME ps | grep front | awk '{print $1}')      
+    API_CONTAINER_NAME=$(docker-compose -p $PROJECT_NAME ps | grep api | awk '{print $1}')  
+
+    FRONT_CONTAINER_IP=$(docker inspect -f '{{ range.NetworkSettings.Networks }}{{.IPAddress}}{{end}}' $FRONT_CONTAINER_NAME)
+    
+    API_CONTAINER_IP=$(docker inspect -f '{{ range.NetworkSettings.Networks }}{{.IPAddress}}{{end}}' $API_CONTAINER_NAME)
+        
+    docker exec -it $FRONT_CONTAINER_NAME sh -c 'sed -i "44c\    <h3>Front container ip $(hostname -i)</h3>" /bin/www/index.html && sed -i "45c\    <h3>Front container id $(hostname)</h3>" /bin/www/index.html'  
+    docker exec -it $FRONT_CONTAINER_NAME sh -c "sed -i '8c\            const apiUrl = \"$API_CONTAINER_IP\"' /bin/www/index.html" 
+    docker exec -it $FRONT_CONTAINER_NAME sh -c "sed -i '9c\            const apiPort = $API_PORT' /bin/www/index.html" 
+
 
 fi
 

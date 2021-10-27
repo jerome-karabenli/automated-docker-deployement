@@ -34,7 +34,7 @@ services:
       build: 
         context: ../
         dockerfile: ./docker/dockerFiles/api.Dockerfile
-        target: prod
+        target: dev
       env_file:
         - ./environement/.api.env
       restart: on-failure
@@ -45,10 +45,9 @@ services:
       build: 
         context: ../
         dockerfile: ./docker/dockerFiles/front.Dockerfile
-        target: prod
+        target: dev
       ports:
-        - 8080:80
-        - 4430:443
+        - 5000:80
       networks:
         - front
       restart: on-failure
