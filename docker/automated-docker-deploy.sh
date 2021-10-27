@@ -143,6 +143,10 @@ if [[ $BUILD_BACK =~ $true_pattern ]]; then
         echo -e "NODE_ENV=production" >> ./environement/.api.env
         [ $? -ne 0 ] && echo -e "$red_text\napi env file creation error, try to create file by yourself and try again$reset_color" && exit    
         [ ! -f ./environement/.api.env ] || [ ! -s ./environement/.api.env ] && echo "$red_text ERROR on population of environnement/.api.env file$reset_color" && exit
+    else
+        sed -i '4c NODE_ENV=' ./environement/.api.env
+        [ $? -ne 0 ] && echo -e "$red_text\napi env file creation error, try to create file by yourself and try again$reset_color" && exit    
+        [ ! -f ./environement/.api.env ] || [ ! -s ./environement/.api.env ] && echo "$red_text ERROR on population of environnement/.api.env file$reset_color" && exit
     fi
 
 fi
