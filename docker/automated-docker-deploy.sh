@@ -391,7 +391,7 @@ if [[ $ENABLE_OPTIONS =~ $true_pattern ]] && [[ $ENABLE_BACKUP_SSH =~ $true_patt
         echo "${green_text}SSH CONNECTION ESTABLISHED WITH YOUR BACKUP SERVER${reset_color}"
     fi
 
-else
+elif [[ $ENABLE_OPTIONS =~ $true_pattern ]] && [[ ! $ENABLE_BACKUP_SSH =~ $true_pattern  ]]; then
     sed -i "8d" ./dockerFiles/utils.Dockerfile
     sed -i "7d" ./dockerFiles/utils.Dockerfile
     sed -i "4d" ./modules/cron.sh
