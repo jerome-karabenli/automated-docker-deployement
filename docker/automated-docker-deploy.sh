@@ -321,7 +321,7 @@ fi
 
 
 #SETUP SENDING DUMPED BACKUP FILE OVER SSH IF TRUE
-if [[ $ENABLE_BACKUP_SSH =~ $true_pattern  ]] && [[ $ENABLE_DUMP_CRON =~ $true_pattern ]] && [[ $BUILD_BACK =~ $true_pattern ]]; then
+if [[ $ENABLE_OPTIONS =~ $true_pattern ]] && [[ $ENABLE_BACKUP_SSH =~ $true_pattern  ]] && [[ $ENABLE_DUMP_CRON =~ $true_pattern ]] && [[ $BUILD_BACK =~ $true_pattern ]]; then
 
     if [[ -n $BACKUP_SERVER_SSH_PASSWORD ]]; then
 
