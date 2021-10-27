@@ -43,7 +43,7 @@ if [[ $BUILD_BACK =~ $true_pattern ]]; then
     [[ ! $DB_CHOICE =~ $db_choice_pattern ]] && echo "$red_text DB CHOICE MUST BE mongo OR postgres$reset_color" && exit
     [[ -z $DB_USERNAME ]] || [[ -z $DB_PASSWORD ]] && echo "$red_text DB USERNAME AND DB PASSWORD MUST BE PROVIDED$reset_color" && exit
     [[ ! $DB_USERNAME =~ $string_underscore_dash_pattern ]] && echo -e "$red_text\nDB USERNAME ERROR \nMUST BE STRING WITH OPTIONAL _ OR - AND NO SPACE$reset_color" && exit    
-    [ -z $(grep "$NODE_ENV_NAME" $ENV_FILE_EXIST) ] || [[ -z $NODE_ENV_NAME ]] || [[ ! $NODE_ENV_NAME =~ $string_underscore_dash_pattern ]] && echo "$red_text NODE ENV NAME MUST BE STRING WITH OPTIONAL _ OR - AND NO SPACE AND MUST BE PRESENT IN YOUR .env FILE$reset_color" && exit
+    [ -z $(grep "$NODE_ENV_NAME" $ENV_FILE_EXIST) ] && echo "$red_text NODE ENV NAME MUST BE STRING WITH OPTIONAL _ OR - AND NO SPACE AND MUST BE PRESENT IN YOUR .env FILE$reset_color" && exit
     [ -z $(grep "$DB_URI_ENV_NAME" $ENV_FILE_EXIST) ] || [[ -z $DB_URI_ENV_NAME ]] || [[ ! $DB_URI_ENV_NAME =~ $string_underscore_dash_pattern ]] && echo "$red_text DB URI ENV NAME MUST BE STRING WITH OPTIONAL _ OR - AND NO SPACE AND MUST BE PRESENT IN YOUR .env FILE$reset_color" && exit
     [ -z $(grep "$API_PORT_ENV_NAME" $ENV_FILE_EXIST) ] || [[ -z $API_PORT_ENV_NAME ]] || [[ ! $API_PORT_ENV_NAME =~ $string_underscore_dash_pattern ]] && echo "$red_text API PORT ENV NAME MUST BE STRING WITH OPTIONAL _ OR - AND NO SPACE AND MUST BE PRESENT IN YOUR .env FILE$reset_color" && exit
     [[ -z $API_PORT ]] || [[ ! $API_PORT =~ $number_pattern ]] && echo "$red_text API PORT ENV NAME MUST BE NUMBER WITH NO SPACE$reset_color" && exit
@@ -138,6 +138,12 @@ if [[ $BUILD_BACK =~ $true_pattern ]]; then
         [ ! -f ./environement/.db.env ] && [ ! -s ./environement/.db.env ] && echo "$red_text ERROR on population of environnement/.db.env file$reset_color" && exit
 
     fi  
+
+    if [[ $ENV =~ $prod_pattern ]]; then 
+        echo -e "NODE_ENV=production" >> ./environement/.api.env
+        [ $? -ne 0 ] && echo -e "$red_text\napi env file creation error, try to create file by yourself and try again$reset_color" && exit    
+        [ ! -f ./environement/.api.env ] || [ ! -s ./environement/.api.env ] && echo "$red_text ERROR on population of environnement/.api.env file$reset_color" && exit
+    fi
 
 fi
 
@@ -397,6 +403,10 @@ else
 
     echo -e "$green_text\nCRON SCHEDULE FOR DB DUMP SUCCESSFULLY DONE$reset_color" 
 
+fi
+
+if [[ $ENV =~ $prod_pattern ]]; then
+    docker rmi alpine:latest
 fi
 
 
