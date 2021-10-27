@@ -2,7 +2,7 @@ version: '3.7'
 services:
     mongo:
       networks:
-        - network
+        - back
       image: mongo:4.0.26
       env_file:
         - ./environement/.db.env
@@ -12,7 +12,7 @@ services:
 
     postgres:
       networks:
-        - network
+        - back
       image: postgres:13.4-alpine
       env_file:
         - ./environement/.db.env
@@ -22,7 +22,7 @@ services:
 
     redis:
       networks:
-        - network
+        - back
       image: redis:alpine
       volumes:
         - redis_data:/data
@@ -30,7 +30,7 @@ services:
 
     api_prod:
       networks:
-        - network
+        - back
       build: 
         context: ../
         dockerfile: ./docker/dockerFiles/api.prod.Dockerfile
@@ -43,15 +43,15 @@ services:
 
     api_dev:
       networks:
-        - network
+        - back
       build: 
         context: ../
         dockerfile: ./docker/dockerFiles/api.dev.Dockerfile
       image: api_dev
       env_file:
         - ./environement/.api.env
-      volumes:
-        - ../api/:/usr/src/app
+#      volumes:
+#        - ../api/:/usr/src/app
       ports:
         - 3000:3000
     
@@ -60,13 +60,17 @@ services:
         context: ../
         dockerfile: ./docker/dockerFiles/front.prod.Dockerfile
       image: front_prod
-      network_mode: host
+      ports:
+        - 80:80
+        - 443:443
+      networks:
+        - front
       restart: on-failure
 
     front_dev:
       image: nginx:stable-alpine
       networks:
-        - network
+        - front
       ports:
         - 5000:80
       volumes: 
@@ -76,7 +80,7 @@ services:
 
     utils:
       networks:
-        - network
+        - back
       build: 
         context: ../
         dockerfile: ./docker/dockerFiles/utils.Dockerfile

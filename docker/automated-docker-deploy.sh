@@ -15,7 +15,8 @@ string_underscore_pattern='^[a-zA-Z_]+$'
 string_underscore_only_lowercase_pattern='^[a-z_]+$'
 cronjob_schedule_pattern='^([0-9\/\*,-]+ ){4}[0-9\/\*,-]+$'
 path_pattern='^/[a-zA-Z0-9/_.\-]+$'
-
+dev_pattern='^[dD][eE][vV]'
+prod_pattern='^[pP][rR][oO][dD]'
 
 #-------------------------------------------------------------------------------------------------------------------#
 #Config file confirmation before run
@@ -32,7 +33,7 @@ ENV_FILE_EXIST=$(find ../api -name .env -o -name .ENV)
 [[ -z $PROJECT_NAME ]] || [[ ! $PROJECT_NAME =~ $string_underscore_only_lowercase_pattern ]] && echo "$red_text PROJECT NAME MUST BE STRING CONTAINING OPTIONAL _ WITH NO SPACE AND WITHOUT NUMBER$reset_color" && exit
 
 # FRONT VARIABLES CHECK
-if [[ $BUILD_FRONT =~ $true_pattern ]]; then
+if [[ $BUILD_FRONT =~ $true_pattern ]] && [[ $ENV =~ $dev_pattern ]]; then
     [[ -z $FRONT_PORT ]] || [[ ! $FRONT_PORT =~ $number_pattern ]] && echo -e "$red_text\nFRONT PORT MUST BE NUMBER WITH NO SPACE$reset_color" && exit
 fi
 
@@ -98,8 +99,7 @@ elif [[ $DB_CHOICE =~ $postgres_pattern ]]; then
     DB_URI="$DB_USERNAME:$DB_PASSWORD@postgres:5432/$DB_USERNAME"
 fi
 
-dev_pattern='^[dD][eE][vV]'
-prod_pattern='^[pP][rR][oO][dD]'
+
 
 #-------------------------------------------------------------------------------------------------------------
 # .env FILES POPULATION FOR docker-compose.yml
