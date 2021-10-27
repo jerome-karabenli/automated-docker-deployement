@@ -53,8 +53,8 @@ app.get("/sqitch", async (req, res) => {
 let certFiles;
 if(process.env.NODE_ENV === "production"){
   certFiles = {
-    key: fs.readFileSync("../ssl/privkey.pem"),
-    cert: fs.readFileSync("../ssl/fullchain.pem")
+    key: fs.readFileSync("./ssl/privkey.pem"),
+    cert: fs.readFileSync("./ssl/fullchain.pem")
   };
 }
 
