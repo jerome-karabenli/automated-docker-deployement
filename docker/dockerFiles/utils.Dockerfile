@@ -4,8 +4,6 @@ RUN apk add --update --no-cache postgresql-client && rm  -rf /tmp/* /var/cache/a
 COPY ./docker/modules/cron.sh .
 RUN echo "*/1 * * * * /root/cron.sh >> /root/cron.log" > cron.txt && /usr/bin/crontab cron.txt && rm cron.txt && chmod 755 cron.sh
 CMD [ "crond", "-f", "-d8" ]  
-RUN apk add --update --no-cache openssh-client rsync sshpass && rm  -rf /tmp/* /var/cache/apk/* > /dev/null
-COPY ./docker/modules/ssh-check.sh .
  
  
  
