@@ -248,10 +248,10 @@ elif [[ $BUILD_FRONT =~ $true_pattern ]] && [[ $ENV =~ $prod_pattern ]]; then
     sed -i "48c\        target: prod" docker-compose.yml
     [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on api_dev setting port in compose file$reset_color" && exit    
 
-    sed -i "50c\        - 8080:80" docker-compose.yml
+    sed -i "50c\        - 80:80" docker-compose.yml
     [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on front_dev setting port in compose file$reset_color" && exit 
 
-    sed -i "51c\        - 4430:443" docker-compose.yml
+    sed -i "51c\        - 443:443" docker-compose.yml
     [ $? -ne 0 ] && echo -e "$red_text\nERROR: occured on front_dev setting port in compose file$reset_color" && exit   
 
     docker-compose -p $PROJECT_NAME up -d front
