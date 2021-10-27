@@ -43,7 +43,6 @@ if [[ $BUILD_BACK =~ $true_pattern ]]; then
     [[ ! $DB_CHOICE =~ $db_choice_pattern ]] && echo "$red_text DB CHOICE MUST BE mongo OR postgres$reset_color" && exit
     [[ -z $DB_USERNAME ]] || [[ -z $DB_PASSWORD ]] && echo "$red_text DB USERNAME AND DB PASSWORD MUST BE PROVIDED$reset_color" && exit
     [[ ! $DB_USERNAME =~ $string_underscore_dash_pattern ]] && echo -e "$red_text\nDB USERNAME ERROR \nMUST BE STRING WITH OPTIONAL _ OR - AND NO SPACE$reset_color" && exit    
-    [ -z $(grep "$NODE_ENV_NAME" $ENV_FILE_EXIST) ] && echo "$red_text NODE ENV NAME MUST BE STRING WITH OPTIONAL _ OR - AND NO SPACE AND MUST BE PRESENT IN YOUR .env FILE$reset_color" && exit
     [ -z $(grep "$DB_URI_ENV_NAME" $ENV_FILE_EXIST) ] || [[ -z $DB_URI_ENV_NAME ]] || [[ ! $DB_URI_ENV_NAME =~ $string_underscore_dash_pattern ]] && echo "$red_text DB URI ENV NAME MUST BE STRING WITH OPTIONAL _ OR - AND NO SPACE AND MUST BE PRESENT IN YOUR .env FILE$reset_color" && exit
     [ -z $(grep "$API_PORT_ENV_NAME" $ENV_FILE_EXIST) ] || [[ -z $API_PORT_ENV_NAME ]] || [[ ! $API_PORT_ENV_NAME =~ $string_underscore_dash_pattern ]] && echo "$red_text API PORT ENV NAME MUST BE STRING WITH OPTIONAL _ OR - AND NO SPACE AND MUST BE PRESENT IN YOUR .env FILE$reset_color" && exit
     [[ -z $API_PORT ]] || [[ ! $API_PORT =~ $number_pattern ]] && echo "$red_text API PORT ENV NAME MUST BE NUMBER WITH NO SPACE$reset_color" && exit
@@ -99,6 +98,8 @@ elif [[ $DB_CHOICE =~ $postgres_pattern ]]; then
     DB_URI="$DB_USERNAME:$DB_PASSWORD@postgres:5432/$DB_USERNAME"
 fi
 
+dev_pattern='^[dD][eE][vV]'
+prod_pattern='^[pP][rR][oO][dD]'
 
 #-------------------------------------------------------------------------------------------------------------
 # .env FILES POPULATION FOR docker-compose.yml
@@ -144,7 +145,7 @@ if [[ $BUILD_BACK =~ $true_pattern ]]; then
         [ $? -ne 0 ] && echo -e "$red_text\napi env file creation error, try to create file by yourself and try again$reset_color" && exit    
         [ ! -f ./environement/.api.env ] || [ ! -s ./environement/.api.env ] && echo "$red_text ERROR on population of environnement/.api.env file$reset_color" && exit
     else
-        sed -i '4c NODE_ENV=' ./environement/.api.env
+        echo " " >> ./environement/.api.env && sed -i '4c NODE_ENV=' ./environement/.api.env
         [ $? -ne 0 ] && echo -e "$red_text\napi env file creation error, try to create file by yourself and try again$reset_color" && exit    
         [ ! -f ./environement/.api.env ] || [ ! -s ./environement/.api.env ] && echo "$red_text ERROR on population of environnement/.api.env file$reset_color" && exit
     fi
@@ -153,8 +154,7 @@ fi
 
 #-------------------------------------------------------------------------------------------------------------
 # DEPLOYEMENT
-dev_pattern='^[dD][eE][vV]'
-prod_pattern='^[pP][rR][oO][dD]'
+
 
 # API DEPLOYEMENT 
 if [[ $BUILD_BACK =~ $true_pattern ]]; then
