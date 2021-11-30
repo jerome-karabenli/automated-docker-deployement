@@ -2,6 +2,8 @@
 
 <div id="top"></div>
 
+![](assets/config.png)
+
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
