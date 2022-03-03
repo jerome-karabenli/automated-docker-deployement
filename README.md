@@ -110,7 +110,7 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 <!-- CONTACT -->
 ## Contact
 
-Jerome Karabenli - jkarabenli.dev@gmail.com
+Jerome Karabenli - contact@jkarabenli.dev
 
 Project Link: [https://github.com/jerome-karabenli/automated-docker-deployement](https://github.com/jerome-karabenli/automated-docker-deployement)
 
