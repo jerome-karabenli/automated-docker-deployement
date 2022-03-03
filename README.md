@@ -24,10 +24,10 @@ It's my first bash script, so it's not perfect at all !
 
 ### Built With
 
-|[Docker](https://www.docker.com/) |[Bash]()|[MongoDB](https://www.docker.com/)|[NodeJS](https://nodejs.org/en/)|
-|-|-|-|-|
-|[ExpressJS](https://expressjs.com/fr/)|[MongoDB](https://www.mongodb.com/fr-fr)|[MongoDB](https://www.docker.com/)|[Postgresql](https://www.postgresql.org/)|
-|[Sqitch](https://sqitch.org/)||||
+|[Docker](https://www.docker.com/) |[Bash]()|[NodeJS](https://nodejs.org/en/)|
+|-|-|-|
+|[Redis](https://redis.io/)|[MongoDB](https://www.mongodb.com/fr-fr)|[Postgresql](https://www.postgresql.org/)|
+|[Sqitch](https://sqitch.org/)|||
 
 ### Tested on
 
