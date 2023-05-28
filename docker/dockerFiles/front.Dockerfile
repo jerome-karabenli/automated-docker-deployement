@@ -1,4 +1,4 @@
-FROM nginx:stable-alpine as builder
+FROM nginx:mainline-alpine as builder
 COPY ./front/build/ /bin/www
 CMD [ "nginx", "-g", "daemon off;" ]
 
