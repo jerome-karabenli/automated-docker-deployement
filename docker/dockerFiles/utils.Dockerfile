@@ -1,4 +1,4 @@
-FROM alpine
+FROM alpine:3.18.3
 WORKDIR /root
 RUN apk add --update --no-cache postgresql-client && rm  -rf /tmp/* /var/cache/apk/* > /dev/null
 COPY ./docker/modules/cron.sh .
