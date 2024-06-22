@@ -1,4 +1,4 @@
-FROM node:lts-alpine as builder
+FROM node:20.14.0-alpine3.20 as builder
 WORKDIR /usr/src/app/
 COPY ./api/ .
 ENTRYPOINT [ "yarn", "run", "start" ]
